@@ -1,0 +1,41 @@
+name: "Push-to-main"
+
+on:
+ pull_request:
+  branches:
+   - main
+
+jobs:
+ pylint_run:
+  name: "Run Pylint"
+  runs-on: ubuntu-latest
+  steps:
+   - name: clone repository
+     uses: actions/checkout@v3
+   - name: Install Python
+     uses: actions/setup-python@v4.6.0
+   - name: Install pylint
+     run: pip3 install pylint
+   - name: Install packages
+     run: pip3 install -r ./requirements.txt
+   - name: Python Linter on functions
+     run: pylint --fail-under=8 ./functions/*.py
+   - name: Python Linter on etl
+     run: pylint --fail-under=8 ./etl/*.py
+
+ pytest_run:
+  name: "Run Pytest"
+  runs-on: ubuntu-latest
+  steps:
+   - name: clone repository
+     uses: actions/checkout@v3
+   - name: Install Python
+     uses: actions/setup-python@v4.6.0
+   - name: Install pytest
+     run: pip3 install pytest
+   - name: Install packages
+     run: pip3 install -r requirements.txt
+   - name: Run pytest on all test files within functions folder
+     run: pytest ./functions/test_*.py
+   - name: Run pytest on all test files within etl folder
+     run: pytest ./etl/test_*.py
