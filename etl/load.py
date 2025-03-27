@@ -91,6 +91,19 @@ def insert_new_gadget_data(db_conn: connection, gadget_data: DataFrame):
                 raise psycopg2.DatabaseError("Error: Unable to insert gadget data!") from exc
 
 
+def insert_new_player_data(db_conn: connection, player_data: dict):
+    """Insert new player data"""
+
+    with db_conn.cursor() as cur:
+        try:
+            cur.execute("""INSERT INTO player 
+                        (player_name, player_tag)
+                        VALUES
+                        (%s, %s)""", player_data["tag"], player_data["name"])
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to insert player data!")
+        
+
 if __name__ =="__main__":
 
     load_dotenv()

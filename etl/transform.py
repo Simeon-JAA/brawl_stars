@@ -231,7 +231,7 @@ def generate_brawler_changes(brawler_db_df: DataFrame, brawler_api_df: DataFrame
 def transform_player_data_api(player_data: dict) -> dict:
     """Transforms player data to be uploaded to db"""
 
-    desired_keys = ('tag', 'name', 'icon', 'trophies', 'highestTrophies',
+    desired_keys = ('tag', 'name', 'trophies', 'highestTrophies',
                     'expLevel', 'expPoints', 'isQualifiedFromChampionshipChallenge',
                     '3vs3Victories', 'soloVictories', 'duoVictories', 'bestRoboRumbleTime')
     

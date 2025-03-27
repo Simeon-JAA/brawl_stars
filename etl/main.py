@@ -77,3 +77,5 @@ def etl_player():
 if __name__ =="__main__":
 
     etl_brawler()
+
+    etl_player()
