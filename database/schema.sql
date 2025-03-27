@@ -49,18 +49,34 @@ CREATE TABLE gear (
 );
 
 CREATE TABLE player (
-  player_name VARCHAR(255) NOT NULL,
-  player_tag VARCHAR(50) NOT NULL,
-  exp_level SMALLINT NOT NULL,
-  exp_points SMALLINT NOT NULL,
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  id SMALLINT GENERATED ALWAYS AS IDENTITY,
+  player_tag VARCHAR(50) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (player_tag)
+);
+
+CREATE TABLE player_name (
+  id SMALLINT GENERATED ALWAYS AS IDENTITY,
+  player_tag VARCHAR(50) NOT NULL,
+  player_name TEXT NOT NULL,
+  player_name_version SMALLINT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (id),
+  FOREIGN KEY (player_tag) REFERENCES player (player_tag)
+);
+
+CREATE TABLE player_exp (
+id SMALLINT GENERATED ALWAYS AS IDENTITY,
+player_tag VARCHAR(50) NOT NULL,
+exp_level SMALLINT NOT NULL,
+exp_points INT NOT NULL,
+PRIMARY KEY (id),
+FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
 
 CREATE TABLE player_trophies(
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
-  player_tag  VARCHAR(255) NOT NULL,
+  player_tag VARCHAR(50) NOT NULL,
   trophies SMALLINT NOT NULL,
   highest_trophies SMALLINT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
