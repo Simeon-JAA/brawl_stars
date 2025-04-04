@@ -11,7 +11,7 @@ from transform import (transform_brawl_data_api, generate_starpower_changes,
                        brawl_api_data_to_df, add_starpower_changes_version,
                        generate_gadget_changes, add_gadget_changes_version,
                        generate_brawler_changes, add_brawler_changes_version,
-                       transform_player_data_api)
+                       transform_player_data_api, transform_battle_log_api)
 from load import (insert_new_brawler_data, insert_new_starpower_data, insert_new_gadget_data)
 
 
@@ -68,8 +68,6 @@ def etl_player():
     config = environ
     bs_player_tag = config["player_tag"]
 
-    ## Extract - Player data
-    player_data_api = extract_player_data_api(config, bs_player_tag)
     player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
     player_data_api = transform_player_data_api(player_data_api)
     print(player_data_api)
@@ -77,8 +75,19 @@ def etl_player():
     # print(player_battle_log_api)
 
 
+def etl_battle_log():
+    """ETL for player battle log"""
+
+    load_dotenv()
+    config = environ
+    bs_player_tag = config["player_tag"]
+
+    player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
+    player_battle_log_api = transform_battle_log_api(player_battle_log_api, bs_player_tag)
+    print(player_battle_log_api)
+
 if __name__ =="__main__":
 
-    # etl_brawler()
+    etl_brawler()
 
-    etl_player()
+    etl_battle_log()

@@ -240,6 +240,62 @@ def transform_player_data_api(player_data: dict) -> dict:
 
     return player_data
 
+
+def get_battle_log_brawler(battle_teams: list[list[dict]], player_tag: str) -> int:
+    """Gets the bralwer played by the player for a specific battle"""
+    
+    all_teams = []
+    for team in battle_teams:
+        all_teams.extend(team)
+
+    try:
+        for player_data in all_teams:
+            if player_data["tag"] == f"#{player_tag}":
+                return player_data["brawler"]["id"]
+    except Exception as exc:
+      raise ValueError("Error: Player not found in battle log!")
+
+
+def is_star_player(star_player_data: dict, player_tag: str) -> bool:
+    """Returns true if star player and false if not"""
+
+    
+    if star_player_data["tag"] == None:
+        return False
+    elif star_player_data["tag"] == f"#{player_tag}":
+        return True
+    else:
+        return False
+
+
+def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> dict:
+    """Transforms player battle log and returns desired values"""
+
+    battle_log = []
+
+    for battle in battle_log_data["items"]:
+        try:
+            battle_to_append = {}
+            battle_to_append["battle_player_tag"] = player_tag
+            battle_to_append["battle_time"] = battle["battleTime"]
+            battle_to_append["battle_mode_id"] = battle["event"]["id"]
+            battle_to_append["battle_map"] = battle["event"]["map"]
+            battle_to_append["battle_type"] = battle["battle"]["type"]
+            battle_to_append["battle_result"] = battle["battle"]["result"]
+            battle_to_append["battle_duration"] = battle["battle"]["duration"]
+            if battle_to_append["battle_type"] in ("ranked"):
+                battle_to_append["battle_trophy_change"] = None
+            else:
+                battle_to_append["battle_trophy_change"] = battle["battle"]["trophyChange"]
+            battle_to_append["brawler_id"] = get_battle_log_brawler(battle["battle"]["teams"], player_tag)
+            battle_to_append["star_player"] = is_star_player(battle["battle"]["starPlayer"], player_tag)
+            battle_log.append(battle_to_append)
+        except Exception as exc:
+            raise ValueError(battle, type(battle))
+
+    return battle_log
+
+
 if __name__ =="__main__":
 
     pass
