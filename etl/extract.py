@@ -291,6 +291,20 @@ def get_api_player_battle_log(api_header_data: str, player_tag: str) -> dict:
     return response_data
 
 
+def get_api_event_rotation_data(api_header_data: str) -> dict:
+    """Sends get request to brawl stars api for event rotation data"""
+
+    try:
+        response = requests.get(f"https://api.brawlstars.com/v1/events/rotation",
+                    headers=api_header_data, timeout=5)
+        response_data = response.json()
+
+    except Exception as exc:
+        raise ConnectionError("Error: Unable to retrieve evebt rotation data from API!") from exc
+
+    return response_data 
+
+
 #TODO DRY 
 def extract_brawler_data_api(config_env: dict) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
@@ -300,6 +314,17 @@ def extract_brawler_data_api(config_env: dict) -> list[dict]:
     all_brawler_data = get_all_brawler_data(api_header_data)
 
     return all_brawler_data
+
+
+#TODO DRY
+def extract_event_data_api(config_env:dict) -> list[dict]:
+    """Extracts event rotation data from the brawl stars api """
+
+    token = config_env["api_token"]
+    api_header_data = get_api_header(token)
+    event_rotation_data = get_api_event_rotation_data(api_header_data)
+
+    return event_rotation_data
 
 
 #TODO DRY
