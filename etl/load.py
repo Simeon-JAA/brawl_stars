@@ -92,17 +92,30 @@ def insert_new_gadget_data(db_conn: connection, gadget_data: DataFrame):
 
 
 def insert_new_player_data(db_conn: connection, player_data: dict):
-    """Insert new player data"""
+    """Insert new data into player table"""
 
     with db_conn.cursor() as cur:
         try:
             cur.execute("""INSERT INTO player 
-                        (player_name, player_tag)
+                        (player_tag)
                         VALUES
-                        (%s, %s)""", player_data["tag"], player_data["name"])
+                        (%s)""", player_data["tag"])
         except Exception as exc:
             raise psycopg2.DatabaseError("Error: Unable to insert player data!")
-        
+
+
+def insert_new_player_name(db_conn: connection, player_data: dict):
+    """Insert new data into player_name table"""
+
+    with db_conn.cursor() as cur:
+        try:
+            cur.execute("""INSERT INTO player_name 
+                        (player_tag, player_name, player_name_version)
+                        VALUES
+                        (%s)""", player_data["tag"])
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to insert player data!")
+
 
 if __name__ =="__main__":
 
