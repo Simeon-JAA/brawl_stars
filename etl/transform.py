@@ -41,12 +41,23 @@ def to_snake_case(text: str) -> str:
         raise TypeError("Error: Text should be a string!")
 
     text = text.replace(" ", "")
-    text = re.sub(r'([a-z0-9\s]{1})([A-Z]{1})', r'\1_\2', text)
+    text = re.sub(r'([a-z\s]{1})([A-Z]{1})', r'\1_\2', text)
 
     if not text:
         raise ValueError("Error: Text cannot be blank!")
 
     return text.lower()
+
+
+def to_title(text: str) -> str:
+    """Formats camelCase test to title"""
+    
+    if "5v5" in text:
+        text = text.replace("5V5", "5v5")
+
+    text = to_snake_case(text).replace("_", " ").title()
+
+    return text
 
 
 def format_datetime(time_api_format: str) -> str:
@@ -56,6 +67,7 @@ def format_datetime(time_api_format: str) -> str:
     format_dt = read_time_format.strftime("%Y-%m-%d %H:%M:%S")
     
     return format_dt
+
 
 def transform_brawl_data_api(brawl_data_api: list[dict]) -> list[dict]:
     """Transform and clean API brawl data"""
@@ -69,6 +81,17 @@ def transform_brawl_data_api(brawl_data_api: list[dict]) -> list[dict]:
         brawl_data_api[index] = brawler
 
     return brawl_data_api
+
+
+def transform_event_data_api(event_data_api: list[dict]) -> DataFrame:
+    """Transforms event data recieved from api"""
+    
+    event_data_api = [event["event"] for event in event_data_api]
+    event_data_api = list(map(lambda event_dict: {**event_dict, 
+                                                  "mode": to_title(event_dict["mode"])},
+                                                  event_data_api))
+    event_data_api_df = DataFrame(event_data_api)
+    return event_data_api_df
 
 
 def get_new_exploded_column_names(column_name: str) -> list[str]:
