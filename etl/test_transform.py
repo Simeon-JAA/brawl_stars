@@ -2,7 +2,6 @@
 
 import pytest
 
-
 from transform import to_snake_case, brawler_name_value_to_title, transform_brawl_data_api
 
 
