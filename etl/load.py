@@ -91,6 +91,65 @@ def insert_new_gadget_data(db_conn: connection, gadget_data: DataFrame):
                 raise psycopg2.DatabaseError("Error: Unable to insert gadget data!") from exc
 
 
+def insert_new_player_data(db_conn: connection, player_data: dict):
+    """Insert new data into player table"""
+
+    with db_conn.cursor() as cur:
+        try:
+            cur.execute("""INSERT INTO player 
+                        (player_tag)
+                        VALUES
+                        (%s)""", player_data["tag"])
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to insert player data!")
+
+
+def insert_new_player_name(db_conn: connection, player_data: dict):
+    """Insert new data into player_name table"""
+
+    with db_conn.cursor() as cur:
+        try:
+            cur.execute("""INSERT INTO player_name 
+                        (player_tag, player_name, player_name_version)
+                        VALUES
+                        (%s)""", player_data["tag"])
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to insert player data!")
+
+
+def insert_battle_log_data(db_conn: connection, battle_log_data: dict):
+    """Inserts new battle log data into tables"""
+
+    with db_conn.cursor() as cur:
+        for battle in battle_log_data:
+            try:
+                cur.execute("""INSERT INTO battles 
+                            (player_tag, battle_time, event_id,
+                            battle_type, battle_result, battle_duration,
+                            trophy_change, brawler_id, star_player)
+                            VALUES
+                            (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                            #TODO fill out insert variables after tables are finalised
+                            )
+            except Exception as exc:
+                raise psycopg2.DatabaseError("Error: Unable to insert battle log data!")
+
+
+def insert_event_data(db_conn: connection, event_log_data: DataFrame):
+    """Inserts new event data into the database"""
+
+    with db_conn.cursor() as cur:
+        for index, event in event_log_data.iterrows():
+            try:
+                cur.execute("""INSERT INTO event
+                            (event_id, event_mode, event_map)
+                            VALUES
+                            (%s, %s, %s);""",
+                            [event["id"], event["mode"], event["map"]])
+            except Exception as exc:
+                raise psycopg2.DatabaseError("Error inserting event data into the database!")
+
+
 if __name__ =="__main__":
 
     load_dotenv()

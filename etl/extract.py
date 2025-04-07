@@ -216,6 +216,24 @@ def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
     return most_recent_brawler_data_df
 
 
+def get_event_data(db_connection: connection) -> pd.DataFrame:
+    """Returns event data in database"""
+
+    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+        try:
+            cur.execute("""SELECT event_id, event_version, event_mode, event_map
+                        FROM event e;""")
+
+            event_data = cur.fetchall()
+
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to retrieve event data from database!") from exc
+
+    event_data_df = pd.DataFrame(data=event_data,
+                                 columns=("event_id", "event_version", "event_mode", "event_map"))
+    return event_data_df
+
+
 def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
 
@@ -224,6 +242,16 @@ def extract_brawler_data_database(config_env) -> list[dict]:
     most_recent_brawler_data_database = get_most_recent_brawler_data(db_connection)
 
     return most_recent_brawler_data_database
+
+
+def extract_event_data_database(config_env) -> pd.DataFrame:
+    """Extracts event data from database"""
+
+    db_connection = get_db_connection(config_env)
+
+    event_data_database = get_event_data(db_connection)
+
+    return event_data_database
 
 
 ## API Extraction
@@ -291,6 +319,20 @@ def get_api_player_battle_log(api_header_data: str, player_tag: str) -> dict:
     return response_data
 
 
+def get_api_event_rotation_data(api_header_data: str) -> dict:
+    """Sends get request to brawl stars api for event rotation data"""
+
+    try:
+        response = requests.get(f"https://api.brawlstars.com/v1/events/rotation",
+                    headers=api_header_data, timeout=5)
+        response_data = response.json()
+
+    except Exception as exc:
+        raise ConnectionError("Error: Unable to retrieve evebt rotation data from API!") from exc
+
+    return response_data 
+
+
 #TODO DRY 
 def extract_brawler_data_api(config_env: dict) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
@@ -300,6 +342,17 @@ def extract_brawler_data_api(config_env: dict) -> list[dict]:
     all_brawler_data = get_all_brawler_data(api_header_data)
 
     return all_brawler_data
+
+
+#TODO DRY
+def extract_event_data_api(config_env:dict) -> list[dict]:
+    """Extracts event rotation data from the brawl stars api """
+
+    token = config_env["api_token"]
+    api_header_data = get_api_header(token)
+    event_rotation_data = get_api_event_rotation_data(api_header_data)
+
+    return event_rotation_data
 
 
 #TODO DRY

@@ -1,10 +1,10 @@
 """Testing file for extract.py"""
 
+import pytest
 from unittest.mock import MagicMock
 
-
-import pytest
 from extract import get_most_recent_brawler_data, get_most_recent_brawler_version
+
 
 def test_get_most_recent_brawler_data_calls_fetchall():
     """Tests get_most_recent_brawler_data calls the fetchall function"""
