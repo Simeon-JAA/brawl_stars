@@ -234,7 +234,7 @@ def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
             event_data = cur.fetchall()
 
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve event data from database!") from exc
+            raise psycopg2.DatabaseError("Error: Cannot get event data from database!") from exc
 
     event_data_df = pd.DataFrame(data=event_data,
                                  columns=("event_id", "event_version", "mode", "map"))
@@ -330,17 +330,17 @@ def get_api_event_rotation_data(api_header_data: str) -> dict:
     """Sends get request to brawl stars api for event rotation data"""
 
     try:
-        response = requests.get(f"https://api.brawlstars.com/v1/events/rotation",
+        response = requests.get("https://api.brawlstars.com/v1/events/rotation",
                     headers=api_header_data, timeout=5)
         response_data = response.json()
 
     except Exception as exc:
         raise ConnectionError("Error: Unable to retrieve evebt rotation data from API!") from exc
 
-    return response_data 
+    return response_data
 
 
-#TODO DRY 
+#TODO DRY
 def extract_brawler_data_api(config_env: dict) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
 
@@ -365,7 +365,7 @@ def extract_event_data_api(config_env:dict) -> list[dict]:
 #TODO DRY
 def extract_player_data_api(config_env: dict, player_tag: str) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
-    
+
     token = config_env["api_token"]
     api_header_data = get_api_header(token)
     all_player_data = get_api_player_data(api_header_data, player_tag)
@@ -376,7 +376,7 @@ def extract_player_data_api(config_env: dict, player_tag: str) -> list[dict]:
 #TODO DRY
 def extract_player_battle_log_api(config_env: dict, player_tag: str) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
-    
+
     token = config_env["api_token"]
     api_header_data = get_api_header(token)
     all_player_data = get_api_player_battle_log(api_header_data, player_tag)
@@ -390,20 +390,11 @@ if __name__ =="__main__":
 
     config = environ
 
-    conn = get_db_connection(config)
+    api_header = get_api_header(config["api_token"])
+    bs_player_tag  = config["player_tag"]
 
-    event_data = get_most_recent_event_data(conn)
-    print(event_data)
+    brawler_data_database = extract_brawler_data_database(config)
+    brawler_data_api = extract_brawler_data_api(config)
 
-    conn.close()
-
-
-    # api_header = get_api_header(config["api_token"])
-    # bs_player_tag  = config["player_tag"]
-
-    # brawler_data_database = extract_brawler_data_database(config)
-
-    # brawler_data_api = extract_brawler_data_api(config)
-
-    # player_data = get_api_player_data(api_header, bs_player_tag)
-    # player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
+    player_data = get_api_player_data(api_header, bs_player_tag)
+    player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
