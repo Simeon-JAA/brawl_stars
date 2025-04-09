@@ -96,12 +96,12 @@ def insert_new_player_data(db_conn: connection, player_data: dict):
 
     with db_conn.cursor() as cur:
         try:
-            cur.execute("""INSERT INTO player 
+            cur.execute("""INSERT INTO player
                         (player_tag)
                         VALUES
                         (%s)""", player_data["tag"])
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to insert player data!")
+            raise psycopg2.DatabaseError("Error: Unable to insert player data!") from exc
 
 
 def insert_new_player_name(db_conn: connection, player_data: dict):
@@ -109,12 +109,12 @@ def insert_new_player_name(db_conn: connection, player_data: dict):
 
     with db_conn.cursor() as cur:
         try:
-            cur.execute("""INSERT INTO player_name 
+            cur.execute("""INSERT INTO player_name
                         (player_tag, player_name, player_name_version)
                         VALUES
                         (%s)""", player_data["tag"])
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to insert player data!")
+            raise psycopg2.DatabaseError("Error: Unable to insert player data!") from exc
 
 
 def insert_battle_log_data(db_conn: connection, battle_log_data: dict):
@@ -134,7 +134,7 @@ def insert_battle_log_data(db_conn: connection, battle_log_data: dict):
                              battle["brawler_id"], battle["star_player"]]
                             )
             except Exception as exc:
-                raise psycopg2.DatabaseError("Error: Unable to insert battle log data!")
+                raise psycopg2.DatabaseError("Error: Unable to insert battle log data!") from exc
 
 
 def insert_event_data(db_conn: connection, event_log_data: DataFrame):
@@ -149,7 +149,7 @@ def insert_event_data(db_conn: connection, event_log_data: DataFrame):
                             (%s, %s, %s);""",
                             [event["id"], event["mode"], event["map"]])
             except Exception as exc:
-                raise psycopg2.DatabaseError("Error inserting event data into the database!")
+                raise psycopg2.DatabaseError("Error inserting event data into database!") from exc
 
 
 if __name__ =="__main__":
