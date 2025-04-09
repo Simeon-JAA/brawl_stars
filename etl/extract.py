@@ -60,7 +60,7 @@ def get_db_connection(config_env) -> connection:
 
 
 def get_most_recent_brawler_starpowers(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler starpowers in database"""
+    """Returns most recent brawler starpowers from database"""
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
@@ -95,7 +95,7 @@ def get_most_recent_brawler_starpowers(db_connection: connection) -> pd.DataFram
 
 
 def get_most_recent_brawler_gadgets(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler gadgets in database"""
+    """Returns most recent brawler gadgets from database"""
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
@@ -193,7 +193,7 @@ def get_most_recent_gadget_version(db_connection: connection, gadget_id: int) ->
 
 
 def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler data in database"""
+    """Returns most recent brawler data from database"""
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
@@ -216,14 +216,20 @@ def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
     return most_recent_brawler_data_df
 
 
-def get_event_data(db_connection: connection) -> pd.DataFrame:
-    """Returns event data in database"""
+def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
+    """Returns most recent event data from database"""
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
-            cur.execute("""SELECT bs_event_id, 
-                        bs_event_version, mode, map
-                        FROM bs_event;""")
+            cur.execute("""SELECT e.bs_event_id, e.bs_event_version, e.mode, e.map
+                        FROM bs_event e
+                        INNER JOIN (
+                            SELECT e2.bs_event_id, MAX(e2.bs_event_version) AS bs_event_version
+                            FROM bs_event e2
+                            GROUP BY e2.bs_event_id) e_max
+                        ON e.bs_event_id = e_max.bs_event_id
+                        AND e.bs_event_version = e_max.bs_event_version
+                        GROUP BY e.bs_event_id, e.bs_event_version, e.mode, e.map;""")
 
             event_data = cur.fetchall()
 
@@ -250,7 +256,7 @@ def extract_event_data_database(config_env) -> pd.DataFrame:
 
     db_connection = get_db_connection(config_env)
 
-    event_data_database = get_event_data(db_connection)
+    event_data_database = get_most_recent_event_data(db_connection)
 
     return event_data_database
 
@@ -384,12 +390,20 @@ if __name__ =="__main__":
 
     config = environ
 
-    api_header = get_api_header(config["api_token"])
-    bs_player_tag  = config["player_tag"]
+    conn = get_db_connection(config)
 
-    brawler_data_database = extract_brawler_data_database(config)
+    event_data = get_most_recent_event_data(conn)
+    print(event_data)
 
-    brawler_data_api = extract_brawler_data_api(config)
+    conn.close()
 
-    player_data = get_api_player_data(api_header, bs_player_tag)
-    player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
+
+    # api_header = get_api_header(config["api_token"])
+    # bs_player_tag  = config["player_tag"]
+
+    # brawler_data_database = extract_brawler_data_database(config)
+
+    # brawler_data_api = extract_brawler_data_api(config)
+
+    # player_data = get_api_player_data(api_header, bs_player_tag)
+    # player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
