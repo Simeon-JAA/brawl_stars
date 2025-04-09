@@ -123,13 +123,15 @@ def insert_battle_log_data(db_conn: connection, battle_log_data: dict):
     with db_conn.cursor() as cur:
         for battle in battle_log_data:
             try:
-                cur.execute("""INSERT INTO battles 
+                cur.execute("""INSERT INTO battle
                             (player_tag, battle_time, event_id,
-                            battle_type, battle_result, battle_duration,
-                            trophy_change, brawler_id, star_player)
+                            result, duration, trophy_change,
+                            brawler_played_id, star_player)
                             VALUES
-                            (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                            #TODO fill out insert variables after tables are finalised
+                            (%s, %s, %s, %s, %s, %s, %s, %s);""",
+                            [battle["player_tag"], battle["time"], battle["event_id"],
+                             battle["result"], battle["duration"], battle["trophy_change"],
+                             battle["brawler_id"], battle["star_player"]]
                             )
             except Exception as exc:
                 raise psycopg2.DatabaseError("Error: Unable to insert battle log data!")

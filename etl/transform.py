@@ -273,8 +273,8 @@ def transform_player_data_api(player_data: dict) -> dict:
     return player_data
 
 
-def get_battle_log_brawler(battle_teams: list[list[dict]], player_tag: str) -> int:
-    """Gets the bralwer played by the player for a specific battle"""
+def get_brawler_played_from_battle_log(battle_teams: list[list[dict]], player_tag: str) -> int:
+    """Gets the brawler played by the player for a specific battle"""
     
     all_teams = []
     for team in battle_teams:
@@ -284,8 +284,9 @@ def get_battle_log_brawler(battle_teams: list[list[dict]], player_tag: str) -> i
         for player_data in all_teams:
             if player_data["tag"] == f"#{player_tag}":
                 return player_data["brawler"]["id"]
+
     except Exception as exc:
-      raise ValueError("Error: Player not found in battle log!")
+      raise ValueError("Error: Player tag not found in battle log!")
 
 
 def is_star_player(star_player_data: dict, player_tag: str) -> bool:
@@ -300,6 +301,7 @@ def is_star_player(star_player_data: dict, player_tag: str) -> bool:
         return False
 
 
+#TODO filter on player_tag and time (should not insert the same battle twice)
 def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> dict:
     """Transforms player battle log and returns desired values"""
 
@@ -307,18 +309,18 @@ def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> di
 
     for battle in battle_log_data["items"]:
         battle_to_append = {}
-        battle_to_append["battle_player_tag"] = player_tag
-        battle_to_append["battle_time"] = format_datetime(battle["battleTime"])
-        battle_to_append["battle_mode_id"] = battle["event"]["id"]
-        battle_to_append["battle_map"] = battle["event"]["map"].title()
-        battle_to_append["battle_type"] = battle["battle"]["type"].title()
-        battle_to_append["battle_result"] = battle["battle"]["result"].title()
-        battle_to_append["battle_duration"] = battle["battle"]["duration"]
+        battle_to_append["player_tag"] = player_tag
+        battle_to_append["time"] = format_datetime(battle["battleTime"])
+        battle_to_append["event_id"] = battle["event"]["id"]
+        battle_to_append["map"] = battle["event"]["map"].title()
+        battle_to_append["type"] = battle["battle"]["type"].title()
+        battle_to_append["result"] = battle["battle"]["result"].title()
+        battle_to_append["duration"] = battle["battle"]["duration"]
         if "trophyChange" not in battle["battle"].keys():
-            battle_to_append["battle_trophy_change"] = None
+            battle_to_append["trophy_change"] = None
         else:
-            battle_to_append["battle_trophy_change"] = battle["battle"]["trophyChange"]
-        battle_to_append["brawler_id"] = get_battle_log_brawler(battle["battle"]["teams"], player_tag)
+            battle_to_append["trophy_change"] = battle["battle"]["trophyChange"]
+        battle_to_append["brawler_id"] = get_brawler_played_from_battle_log(battle["battle"]["teams"], player_tag)
         battle_to_append["star_player"] = is_star_player(battle["battle"]["starPlayer"], player_tag)
         battle_log.append(battle_to_append)
 
