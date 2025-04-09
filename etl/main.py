@@ -39,6 +39,7 @@ def etl_brawler():
     brawler_starpower_data_api_df = brawl_api_data_to_df(brawler_data_api, "star_powers")
     brawler_gadget_data_api_df = brawl_api_data_to_df(brawler_data_api, "gadgets")
     event_data_api = transform_event_data_api(event_data_api)
+    # print(event_data_api)
 
     # # Changes/Missing data
     brawler_changes_df = generate_brawler_changes(brawler_data_database_df, brawler_data_api_df)
@@ -61,7 +62,7 @@ def etl_brawler():
     insert_new_starpower_data(conn, starpower_changes_df)
     insert_new_gadget_data(conn, gadget_changes_df)
 
-    conn.commit()
+    # conn.commit()
     conn.close()
 
 
@@ -93,4 +94,4 @@ if __name__ =="__main__":
 
     etl_brawler()
 
-    # etl_battle_log()
+    etl_battle_log()

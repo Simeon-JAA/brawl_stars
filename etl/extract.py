@@ -221,8 +221,9 @@ def get_event_data(db_connection: connection) -> pd.DataFrame:
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
-            cur.execute("""SELECT event_id, event_version, event_mode, event_map
-                        FROM event e;""")
+            cur.execute("""SELECT bs_event_id, 
+                        bs_event_version, mode, map
+                        FROM bs_event;""")
 
             event_data = cur.fetchall()
 
@@ -230,7 +231,7 @@ def get_event_data(db_connection: connection) -> pd.DataFrame:
             raise psycopg2.DatabaseError("Error: Unable to retrieve event data from database!") from exc
 
     event_data_df = pd.DataFrame(data=event_data,
-                                 columns=("event_id", "event_version", "event_mode", "event_map"))
+                                 columns=("event_id", "event_version", "mode", "map"))
     return event_data_df
 
 
