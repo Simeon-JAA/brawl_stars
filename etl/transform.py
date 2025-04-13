@@ -91,6 +91,8 @@ def transform_event_data_api(event_data_api: list[dict]) -> DataFrame:
                                                   "mode": to_title(event_dict["mode"])},
                                                   event_data_api))
     event_data_api_df = DataFrame(event_data_api).rename(columns={"id": "event_id"})
+    event_data_api_df = event_data_api_df.drop_duplicates().reset_index(drop=True)
+
     return event_data_api_df
 
 
