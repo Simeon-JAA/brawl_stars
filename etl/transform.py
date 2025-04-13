@@ -90,7 +90,7 @@ def transform_event_data_api(event_data_api: list[dict]) -> DataFrame:
     event_data_api = list(map(lambda event_dict: {**event_dict,
                                                   "mode": to_title(event_dict["mode"])},
                                                   event_data_api))
-    event_data_api_df = DataFrame(event_data_api)
+    event_data_api_df = DataFrame(event_data_api).rename(columns={"id": "event_id"})
     return event_data_api_df
 
 
@@ -237,7 +237,9 @@ def generate_gadget_changes(gadget_db_df: DataFrame,
 
 def generate_brawler_changes(brawler_db_df: DataFrame,
                              brawler_api_df: DataFrame) -> DataFrame:
-    """Compares data between database and api for brawlers and returns the difference to be inserted"""
+    """Compares data between database and api for changes to
+    brawler data and returns the difference to be inserted
+    into the database"""
 
     brawler_data_to_load = DataFrame(columns={"brawler_id": [],
                                                 "brawler_name": []})
@@ -265,6 +267,20 @@ def generate_brawler_changes(brawler_db_df: DataFrame,
             brawler_data_to_load = concat([brawler_data_to_load, differences_filtered_df], ignore_index=True)
 
     return brawler_data_to_load
+
+
+def generate_event_changes(event_db_df: DataFrame,
+                           event_api_df: DataFrame) -> DataFrame:
+    """Compares the event data between the api and database
+    and finds the difference/changes to insert into the database"""
+
+    for event_id in event_api_df["event_id"].unique():
+        if event_id not in event_db_df["event_id"].unique():
+            event_api_df.loc[event_api_df["event_id"] == event_id, "event_version"] = 1
+
+    event_api_df["event_version"] = event_api_df["event_version"].astype(int)
+
+    return event_api_df[["event_id", "event_version", "mode", "map"]]
 
 
 def transform_player_data_api(player_data: dict) -> dict:
@@ -306,7 +322,8 @@ def is_star_player(star_player_data: dict, player_tag: str) -> bool:
 
 
 #TODO filter on player_tag and time (should not insert the same battle twice)
-def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> dict:
+#TODO change battle log format to a dataframe for standardised data
+def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> pd.DataFrame:
     """Transforms player battle log and returns desired values"""
 
     battle_log = []
