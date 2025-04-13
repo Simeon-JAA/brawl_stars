@@ -43,3 +43,8 @@ def test_get_most_recent_brawler_version_calls_fetchone():
     get_most_recent_brawler_version(conn, 1)
 
     assert mock_fetchone.call_count == 1
+
+
+if __name__ == "__main__":
+    
+    pytest.main()

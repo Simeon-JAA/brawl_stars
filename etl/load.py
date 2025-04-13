@@ -140,6 +140,8 @@ def insert_battle_log_data(db_conn: connection, battle_log_data: dict):
 def insert_new_event_data(db_conn: connection, event_log_data: DataFrame):
     """Inserts new event data into the database"""
 
+    if not isinstance(event_log_data, DataFrame):
+        raise TypeError("Error: Event log data is not a dataframe!")
     if event_log_data.empty:
         return
 
