@@ -137,17 +137,18 @@ def insert_battle_log_data(db_conn: connection, battle_log_data: dict):
                 raise psycopg2.DatabaseError("Error: Unable to insert battle log data!") from exc
 
 
-def insert_event_data(db_conn: connection, event_log_data: DataFrame):
+def insert_new_event_data(db_conn: connection, event_log_data: DataFrame):
     """Inserts new event data into the database"""
 
     with db_conn.cursor() as cur:
         for index, event in event_log_data.iterrows():
             try:
-                cur.execute("""INSERT INTO event
-                            (event_id, event_mode, event_map)
+                cur.execute("""INSERT INTO bs_event
+                            (bs_event_id, bs_event_version, mode, map)
                             VALUES
-                            (%s, %s, %s);""",
-                            [event["id"], event["mode"], event["map"]])
+                            (%s, %s, %s, %s);""",
+                            [event["event_id"], event["event_version"],
+                             event["mode"], event["map"]])
             except Exception as exc:
                 raise psycopg2.DatabaseError("Error inserting event data into database!") from exc
 

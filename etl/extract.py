@@ -236,11 +236,15 @@ def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
         except Exception as exc:
             raise psycopg2.DatabaseError("Error: Cannot get event data from database!") from exc
 
-    event_data_df = pd.DataFrame(data=event_data).rename(columns={
+    event_data_df = pd.DataFrame(data=event_data,
+                                 columns=("bs_event_id",
+                                          "bs_event_version",
+                                          "mode",
+                                          "map")).rename(columns={
         "bs_event_id": "event_id",
         "bs_event_version": "event_version"})
 
-    return event_data_df
+    return event_data_df[["event_id", "event_version", "mode", "map"]]
 
 
 def extract_brawler_data_database(config_env) -> list[dict]:

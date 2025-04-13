@@ -92,8 +92,9 @@ def transform_event_data_api(event_data_api: list[dict]) -> DataFrame:
                                                   event_data_api))
     event_data_api_df = DataFrame(event_data_api).rename(columns={"id": "event_id"})
     event_data_api_df = event_data_api_df.drop_duplicates().reset_index(drop=True)
+    event_data_api_df["event_version"] = None
 
-    return event_data_api_df
+    return event_data_api_df[["event_id", "event_version", "mode", "map"]]
 
 
 def get_new_exploded_column_names(column_name: str) -> list[str]:
@@ -280,9 +281,7 @@ def generate_event_changes(event_db_df: DataFrame,
         if event_id not in event_db_df["event_id"].unique():
             event_api_df.loc[event_api_df["event_id"] == event_id, "event_version"] = 1
 
-    event_api_df["event_version"] = event_api_df["event_version"].astype(int)
-
-    return event_api_df[["event_id", "event_version", "mode", "map"]]
+    return event_api_df
 
 
 def transform_player_data_api(player_data: dict) -> dict:
