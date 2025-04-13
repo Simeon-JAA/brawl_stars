@@ -2,7 +2,6 @@
 
 import pytest
 
-
 from transform import to_snake_case, brawler_name_value_to_title, transform_brawl_data_api
 
 
@@ -97,6 +96,20 @@ def test_to_snake_case_edge_case_3():
 
     with pytest.raises(Exception):
         to_snake_case(1)
+
+
+def test_to_snake_case_edge_case_4():
+    """Tests esge case for to_snake_case"""
+
+    result = to_snake_case("brawlBall5V5")
+    assert result == "brawl_ball_5v5"
+
+
+def test_to_snake_case_edge_case_5():
+    """Tests esge case for to_snake_case"""
+
+    result = to_snake_case("brawlBall5V5   ")
+    assert result == "brawl_ball_5v5"
 
 
 def test_brawler_name_value_to_title_base_case_1():
@@ -203,3 +216,8 @@ def test_transform_brawl_data_api_base_case_1():
                                     'name': 'Clay Pigeons'}
                                   ]
                       }]
+
+
+if __name__ == "__main__":
+
+    pytest.main()

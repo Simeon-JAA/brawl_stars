@@ -60,7 +60,7 @@ def get_db_connection(config_env) -> connection:
 
 
 def get_most_recent_brawler_starpowers(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler starpowers in database"""
+    """Returns most recent brawler starpowers from database"""
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
@@ -95,7 +95,7 @@ def get_most_recent_brawler_starpowers(db_connection: connection) -> pd.DataFram
 
 
 def get_most_recent_brawler_gadgets(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler gadgets in database"""
+    """Returns most recent brawler gadgets from database"""
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
@@ -193,7 +193,7 @@ def get_most_recent_gadget_version(db_connection: connection, gadget_id: int) ->
 
 
 def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler data in database"""
+    """Returns most recent brawler data from database"""
 
     with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
         try:
@@ -216,6 +216,37 @@ def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
     return most_recent_brawler_data_df
 
 
+def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
+    """Returns most recent event data from database"""
+
+    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+        try:
+            cur.execute("""SELECT e.bs_event_id, e.bs_event_version, e.mode, e.map
+                        FROM bs_event e
+                        INNER JOIN (
+                            SELECT e2.bs_event_id, MAX(e2.bs_event_version) AS bs_event_version
+                            FROM bs_event e2
+                            GROUP BY e2.bs_event_id) e_max
+                        ON e.bs_event_id = e_max.bs_event_id
+                        AND e.bs_event_version = e_max.bs_event_version
+                        GROUP BY e.bs_event_id, e.bs_event_version, e.mode, e.map;""")
+
+            event_data = cur.fetchall()
+
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Cannot get event data from database!") from exc
+
+    event_data_df = pd.DataFrame(data=event_data,
+                                 columns=("bs_event_id",
+                                          "bs_event_version",
+                                          "mode",
+                                          "map")).rename(columns={
+        "bs_event_id": "event_id",
+        "bs_event_version": "event_version"})
+
+    return event_data_df[["event_id", "event_version", "mode", "map"]]
+
+
 def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
 
@@ -224,6 +255,16 @@ def extract_brawler_data_database(config_env) -> list[dict]:
     most_recent_brawler_data_database = get_most_recent_brawler_data(db_connection)
 
     return most_recent_brawler_data_database
+
+
+def extract_event_data_database(config_env) -> pd.DataFrame:
+    """Extracts event data from database"""
+
+    db_connection = get_db_connection(config_env)
+
+    event_data_database = get_most_recent_event_data(db_connection)
+
+    return event_data_database
 
 
 ## API Extraction
@@ -291,7 +332,21 @@ def get_api_player_battle_log(api_header_data: str, player_tag: str) -> dict:
     return response_data
 
 
-#TODO DRY 
+def get_api_event_rotation_data(api_header_data: str) -> dict:
+    """Sends get request to brawl stars api for event rotation data"""
+
+    try:
+        response = requests.get("https://api.brawlstars.com/v1/events/rotation",
+                    headers=api_header_data, timeout=5)
+        response_data = response.json()
+
+    except Exception as exc:
+        raise ConnectionError("Error: Unable to retrieve evebt rotation data from API!") from exc
+
+    return response_data
+
+
+#TODO DRY
 def extract_brawler_data_api(config_env: dict) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
 
@@ -303,9 +358,20 @@ def extract_brawler_data_api(config_env: dict) -> list[dict]:
 
 
 #TODO DRY
+def extract_event_data_api(config_env:dict) -> list[dict]:
+    """Extracts event rotation data from the brawl stars api """
+
+    token = config_env["api_token"]
+    api_header_data = get_api_header(token)
+    event_rotation_data = get_api_event_rotation_data(api_header_data)
+
+    return event_rotation_data
+
+
+#TODO DRY
 def extract_player_data_api(config_env: dict, player_tag: str) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
-    
+
     token = config_env["api_token"]
     api_header_data = get_api_header(token)
     all_player_data = get_api_player_data(api_header_data, player_tag)
@@ -316,7 +382,7 @@ def extract_player_data_api(config_env: dict, player_tag: str) -> list[dict]:
 #TODO DRY
 def extract_player_battle_log_api(config_env: dict, player_tag: str) -> list[dict]:
     """Extracts brawler data by get request to the brawl API"""
-    
+
     token = config_env["api_token"]
     api_header_data = get_api_header(token)
     all_player_data = get_api_player_battle_log(api_header_data, player_tag)
@@ -334,7 +400,6 @@ if __name__ =="__main__":
     bs_player_tag  = config["player_tag"]
 
     brawler_data_database = extract_brawler_data_database(config)
-
     brawler_data_api = extract_brawler_data_api(config)
 
     player_data = get_api_player_data(api_header, bs_player_tag)

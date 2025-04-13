@@ -1,5 +1,6 @@
-python-dotenv
+pandas
 requests
+python-dotenv
 pylint
 psycopg2-binary
-pandas
+pytest

@@ -74,7 +74,7 @@ PRIMARY KEY (id),
 FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
 
-CREATE TABLE player_trophies(
+CREATE TABLE player_tropies (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   player_tag VARCHAR(50) NOT NULL,
   trophies SMALLINT NOT NULL,
@@ -84,11 +84,28 @@ CREATE TABLE player_trophies(
   FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
 
-CREATE TABLE player_3vs3_victories (
+CREATE TABLE bs_event (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
-  player_tag VARCHAR(255) NOT NULL,
-  victories SMALLINT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  bs_event_id INT UNIQUE NOT NULL,
+  bs_event_version SMALLINT NOT NULL,
+  mode TEXT NOT NULL,
+  map TEXT NOT NULL, 
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ,
+  PRIMARY KEY (bs_event_id)
+);
+
+CREATE TABLE battle (
+  id INT GENERATED ALWAYS AS IDENTITY,
+  player_tag VARCHAR(50),
+  battle_time TIMESTAMPTZ,
+  bs_event_id INT NOT NULL,
+  result TEXT NOT NULL,
+  duration SMALLINT NOT NULL,
+  trophy_change SMALLINT, 
+  brawler_played_id INT NOT NULL,
+  star_player boolean,
   PRIMARY KEY (id),
+  FOREIGN KEY (bs_event_id) REFERENCES bs_event (bs_event_id),
   FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
