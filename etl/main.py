@@ -44,7 +44,6 @@ def etl_brawler():
     brawler_changes_df = generate_brawler_changes(brawler_data_database_df, brawler_data_api_df)
     brawler_changes_df = add_brawler_changes_version(conn, brawler_changes_df)
     event_changes_df = generate_event_changes(event_data_database_df, event_data_api)
-
     # Insert brawler updates/new data
     # This is required as brawler_version is pulled into
     # other dataframes, so this should be updated first so the most recent version is pulled)
