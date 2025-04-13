@@ -1,6 +1,7 @@
 """Main pipeline file to ru full etl on brawler data into the database"""
 
 from os import environ
+from datetime import datetime as dt
 
 from dotenv import load_dotenv
 
@@ -18,11 +19,9 @@ from load import (insert_new_brawler_data, insert_new_starpower_data, insert_new
                   insert_new_event_data)
 
 
-def etl_brawler():
-    """ETL for brawler data"""
+def etl_brawl_data(config):
+    """ETL for general brawl data"""
 
-    load_dotenv()
-    config = environ
     conn = get_db_connection(config)
 
     # Extract - Brawler data
@@ -66,23 +65,17 @@ def etl_brawler():
     conn.close()
 
 
-def etl_player():
+def etl_player(config):
     """ETL for player data"""
 
-    load_dotenv()
-    config = environ
     bs_player_tag = config["player_tag"]
 
     player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
     player_data_api = transform_player_data_api(player_data_api)
 
 
-def etl_battle_log():
+def etl_battle_log(config, bs_player_tag):
     """ETL for player battle log"""
-
-    load_dotenv()
-    config = environ
-    bs_player_tag = config["player_tag"]
 
     player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
     player_battle_log_api = transform_battle_log_api(player_battle_log_api, bs_player_tag)
@@ -92,6 +85,11 @@ def etl_battle_log():
 
 if __name__ =="__main__":
 
-    etl_brawler()
+    load_dotenv()
+    config = environ
+
+    print(f"ETL pipeline -> Start @ {dt.now()}")
+    etl_brawl_data(config)
+    print(f"ETL pipeline -> End @ {dt.now()}")
 
     # etl_battle_log()
