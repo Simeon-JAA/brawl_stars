@@ -236,8 +236,10 @@ def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
         except Exception as exc:
             raise psycopg2.DatabaseError("Error: Cannot get event data from database!") from exc
 
-    event_data_df = pd.DataFrame(data=event_data,
-                                 columns=("event_id", "event_version", "mode", "map"))
+    event_data_df = pd.DataFrame(data=event_data).rename(columns={
+        "bs_event_id": "event_id",
+        "bs_event_version": "event_version"})
+
     return event_data_df
 
 
