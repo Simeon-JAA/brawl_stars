@@ -3,6 +3,7 @@ DROP DATABASE IF EXISTS brawl;
 CREATE DATABASE brawl;
 
 \c brawl;
+DROP TABLE IF EXISTS brawler CASCADE;
 CREATE TABLE brawler (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   brawler_id INT NOT NULL,
@@ -12,6 +13,7 @@ CREATE TABLE brawler (
   PRIMARY KEY (brawler_id, brawler_version)
 );
 
+DROP TABLE IF EXISTS starpower CASCADE;
 CREATE TABLE starpower (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   starpower_id INT NOT NULL,
@@ -24,6 +26,7 @@ CREATE TABLE starpower (
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
 );
 
+DROP TABLE IF EXISTS gadget CASCADE;
 CREATE TABLE gadget (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   gadget_id INT NOT NULL,
@@ -36,6 +39,7 @@ CREATE TABLE gadget (
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
 );
 
+DROP TABLE IF EXISTS gear CASCADE;
 CREATE TABLE gear (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   gear_id INT NOT NULL,
@@ -48,6 +52,7 @@ CREATE TABLE gear (
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
 );
 
+DROP TABLE IF EXISTS player CASCADE;
 CREATE TABLE player (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   player_tag VARCHAR(50) UNIQUE NOT NULL,
@@ -55,6 +60,7 @@ CREATE TABLE player (
   PRIMARY KEY (player_tag)
 );
 
+DROP TABLE IF EXISTS player_name CASCADE;  
 CREATE TABLE player_name (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   player_tag VARCHAR(50) NOT NULL,
@@ -65,6 +71,7 @@ CREATE TABLE player_name (
   FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
 
+DROP TABLE IF EXISTS player_exp CASCADE;
 CREATE TABLE player_exp (
 id SMALLINT GENERATED ALWAYS AS IDENTITY,
 player_tag VARCHAR(50) NOT NULL,
@@ -74,6 +81,7 @@ PRIMARY KEY (id),
 FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
 
+DROP TABLE IF EXISTS player_tropies CASCADE;
 CREATE TABLE player_tropies (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   player_tag VARCHAR(50) NOT NULL,
@@ -84,6 +92,7 @@ CREATE TABLE player_tropies (
   FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
 
+DROP TABLE IF EXISTS bs_event CASCADE;
 CREATE TABLE bs_event (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   bs_event_id INT UNIQUE NOT NULL,
@@ -95,6 +104,7 @@ CREATE TABLE bs_event (
   PRIMARY KEY (bs_event_id)
 );
 
+DROP TABLE IF EXISTS battle CASCADE;
 CREATE TABLE battle (
   id INT GENERATED ALWAYS AS IDENTITY,
   player_tag VARCHAR(50),
