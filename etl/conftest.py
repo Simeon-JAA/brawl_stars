@@ -26,8 +26,7 @@ def mock_event_api_dataframe():
 def mock_single_bs_battle():
     """Returns a mock battle log entry"""
 
-    return {
-        {'battleTime': '20250413T092206.000Z',
+    return {'battleTime': '20250413T092206.000Z',
          'event': {'id': 15000132, 'mode': 'brawlBall',
                    'map': 'Center Stage'},
          'battle': {'mode': 'brawlBall', 'type': 'soloRanked',
@@ -37,7 +36,7 @@ def mock_single_bs_battle():
                                    'brawler': {'id': 16000025,
                                                'name': 'CARL',
                                                'power': 11,
-                                               'trophies': 16}
+                                               'trophies': 16}}
                                   }, 
                     'teams': [[{'tag': '#LLPCV2GVP', 'name': 'chihiro.', 'brawler': 
                                 {'id': 16000025, 'name': 'CARL', 'power': 11, 'trophies': 16}},
@@ -50,5 +49,4 @@ def mock_single_bs_battle():
                                 {'tag': '#J8J8L20UL', 'name': 'mikikikiriki', 'brawler': 
                                  {'id': 16000029, 'name': 'BEA', 'power': 11, 'trophies': 16}},
                                  {'tag': '#Y98JQCQJ8', 'name': 'Benji', 'brawler':
-                                  {'id': 16000002, 'name': 'BULL', 'power': 11, 'trophies': 16}}]]}}
-    }
+                                  {'id': 16000002, 'name': 'BULL', 'power': 11, 'trophies': 16}}]]}
