@@ -140,6 +140,9 @@ def insert_battle_log_data(db_conn: connection, battle_log_data: dict):
 def insert_new_event_data(db_conn: connection, event_log_data: DataFrame):
     """Inserts new event data into the database"""
 
+    if event_log_data.empty:
+        return
+
     with db_conn.cursor() as cur:
         for index, event in event_log_data.iterrows():
             try:

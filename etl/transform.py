@@ -280,6 +280,8 @@ def generate_event_changes(event_db_df: DataFrame,
     for event_id in event_api_df["event_id"].unique():
         if event_id not in event_db_df["event_id"].unique():
             event_api_df.loc[event_api_df["event_id"] == event_id, "event_version"] = 1
+        else:
+            event_api_df.drop(event_api_df[event_api_df["event_id"] == event_id].index, inplace=True)
 
     return event_api_df
 
