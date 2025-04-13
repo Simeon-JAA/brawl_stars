@@ -1,7 +1,8 @@
 """Testing file for extract.py"""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from extract import get_most_recent_brawler_data, get_most_recent_brawler_version
 

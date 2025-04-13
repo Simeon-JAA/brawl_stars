@@ -40,8 +40,8 @@ def to_snake_case(text: str) -> str:
     if not isinstance(text, str):
         raise TypeError("Error: Text should be a string!")
 
-    text = text.replace(" ", "")
-    text = re.sub(r'([a-z\s]{1})([A-Z]{1})', r'\1_\2', text)
+    text = text.replace(" ", "").replace("5V5", "_5v5")
+    text = re.sub(r'([a-z\s0-9]{1})([\sA-Z]{1})', r'\1_\2', text)
 
     if not text:
         raise ValueError("Error: Text cannot be blank!")
