@@ -219,5 +219,5 @@ def test_transform_brawl_data_api_base_case_1():
 
 
 if __name__ == "__main__":
-    
+
     pytest.main()
