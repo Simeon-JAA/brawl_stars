@@ -2,8 +2,11 @@
 
 import pytest
 
-from transform import (to_snake_case, brawler_name_value_to_title,
-                       transform_brawl_data_api, transform_single_battle_entry)
+from pandas import DataFrame
+
+from transform import (to_snake_case, brawler_name_value_to_title, valid_trophy_change,
+                       transform_brawl_data_api, transform_single_battle_log_entry,
+                       format_datetime)
 
 
 def test_to_snake_case_base_case_1():
@@ -202,6 +205,82 @@ def test_transform_brawl_data_api_base_case_1():
                                   ]
                       }]
 
+def test_format_datetime_wrong_input_raises_type_error():
+    """Tests type error is raised for format_datetime
+    if the input is not a string"""
+
+    with pytest.raises(TypeError):
+        format_datetime(5)
+
+def test_format_datetime_empty_input_raises_value_error():
+    """Tests value error is raised for format_datetime
+    if the input is and empty string"""
+
+    with pytest.raises(ValueError):
+        format_datetime("")
+
+def test_format_datetime_whitepace_input_raises_value_error():
+    """Tests value error is raised for format_datetime
+    if the input only whitespace"""
+
+    with pytest.raises(ValueError):
+        format_datetime("    ")
+
+def test_valid_trophy_change_empty_dictionary_raises_value_error():
+    """Tests value error is raised for valid_trophy_change
+    if the input is an empty dictionary"""
+    
+    with pytest.raises(ValueError):
+        valid_trophy_change({})
+
+def test_valid_trophy_change_wrong_input_raises_type_error():
+    """Tests type error is raised for valid_trophy_change
+    if the input is not a dictionary"""
+    
+    with pytest.raises(TypeError):
+        valid_trophy_change("This is not a dictionary!")
+
+def test_valid_trophy_change_returns_true_with_trophy_change_key():
+    """Tests valid_trophy_change returns true if the input
+    dictionary has a trophyChange key"""
+
+    result = valid_trophy_change({"battle" : {"trophyChange": 0}})
+    assert result == True
+
+def test_valid_trophy_change_returns_false_without_trophy_change_key(mock_single_bs_battle):
+    """Tests valid_trophy_change returns false if the input
+    dictionary does not have a trophyChange key"""
+
+    result = valid_trophy_change(mock_single_bs_battle)
+    assert result == False
+
+def test_transform_single_battle_log_entry_raises_type_error_with_wrong_input():
+    """Tests type error is raised for transform_single_battle_log_entry
+    if the input is not a dictionary"""
+
+    with pytest.raises(TypeError):
+        transform_single_battle_log_entry("This is not a dictionary!")
+
+def test_transform_single_battle_log_entry_raises_value_error_with_empty_dictionary():
+    """Tests value error is raised for transform_single_battle_log_entry
+    if the dictionary input is empty"""
+
+    with pytest.raises(ValueError):
+        transform_single_battle_log_entry({})
+
+def test_transform_single_battle_log_entry_returns_dataframe(mock_single_bs_battle):
+    """Tests transform_single_battle_log_entry returns a dataframe"""
+
+    result = transform_single_battle_log_entry(mock_single_bs_battle)
+    assert isinstance(result, DataFrame)
+
+def test_transform_single_battle_log_entry_returns_correct_columns(mock_single_bs_battle):
+    """Tests transform_single_battle_log_entry returns the correct columns"""
+
+    desired_columns = ["battle_time", "event_id", "result", 
+                       "duration", "battle_type", "trophy_change"]
+    result = transform_single_battle_log_entry(mock_single_bs_battle)
+    assert result.columns.tolist() == desired_columns
 
 if __name__ == "__main__":
 

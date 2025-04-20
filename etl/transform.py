@@ -12,7 +12,9 @@ from extract import (get_most_recent_starpower_version, get_most_recent_gadget_v
 
 
 def brawler_name_value_to_title(brawler_data: dict) -> dict:
-    """Apply title() to all values for the 'name' key"""
+    """Apply title() to all values for the 'name' key
+    Function used for transforming brawler data receieved
+    from the API"""
 
     if not isinstance(brawler_data, dict):
         raise TypeError("Error: Brawler data is an incorrect type!")
@@ -324,6 +326,45 @@ def is_star_player(star_player_data: dict, player_tag: str) -> bool:
     return False
 
 
+def valid_trophy_change(battle_log_entry: dict) -> bool:
+    """Checks if the 'trophyChange' key exsists and if the key is valid
+    (some special events returned from the api return a trophyChange key
+    which is not representative fr in game data)"""
+
+    if not isinstance(battle_log_entry, dict):
+        raise TypeError("Error: battle log is not a dictionary!")
+    if not battle_log_entry:
+        raise ValueError("Error: battle log is empty!")
+    
+    if "trophyChange" not in battle_log_entry["battle"].keys():
+        return False
+    
+    return True
+
+def transform_single_battle_log_entry(single_battle_log_entry: dict) -> DataFrame:
+    """Transforms single entry of a battle log into a dataframe"""
+    
+    if not isinstance(single_battle_log_entry, dict):
+        raise TypeError("Error: Battle log entry is not a dictionary!") 
+    if not single_battle_log_entry:
+        raise ValueError("Error: Battle log entry is empty!")
+    
+    single_battle_log_entry_df = pd.DataFrame()
+    single_battle_log_entry_df["battle_time"] = format_datetime(single_battle_log_entry["battleTime"])
+    single_battle_log_entry_df["event_id"] = single_battle_log_entry["event"]["id"]
+    single_battle_log_entry_df["result"] = single_battle_log_entry["battle"]["result"]
+    single_battle_log_entry_df["duration"] = single_battle_log_entry["battle"]["duration"]
+    single_battle_log_entry_df["battle_type"] = single_battle_log_entry["battle"]["type"]
+    if valid_trophy_change(single_battle_log_entry):
+        ###TODO complete
+        single_battle_log_entry_df["trophy_change"] = 0
+    else:
+        single_battle_log_entry_df["trophy_change"] = None
+        
+        
+
+    return single_battle_log_entry_df
+
 #TODO filter on player_tag and time (should not insert the same battle twice)
 #TODO change battle log format to a dataframe for standardised data
 def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> pd.DataFrame:
@@ -333,6 +374,8 @@ def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> pd
 
     for battle in battle_log_data["items"]:
         battle_to_append = {}
+        print(battle)
+        break
         battle_to_append["player_tag"] = player_tag
         battle_to_append["time"] = format_datetime(battle["battleTime"])
         battle_to_append["event_id"] = battle["event"]["id"]
