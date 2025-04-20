@@ -92,4 +92,9 @@ if __name__ =="__main__":
     etl_brawl_data(config)
     print(f"ETL pipeline -> End @ {dt.now()}")
 
-    # etl_battle_log()
+    player_tag = config["player_tag"].split(",")
+    
+    for tag in player_tag:
+        print(f"ETL battle log for {tag} -> Start @ {dt.now()}")
+        etl_battle_log(config, tag)
+        print(f"ETL battle log for {tag} -> End @ {dt.now()}")
