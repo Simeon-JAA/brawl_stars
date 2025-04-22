@@ -45,6 +45,19 @@ def insert_new_brawler_data(db_conn: connection, brawler_data: DataFrame):
                 raise psycopg2.DatabaseError("Error: Unable to insert brawler data!") from exc
 
 
+def insert_new_battle_type_data(db_conn: connection, battle_type: str):
+    """Inserts new battle type data into the database"""
+
+    with db_conn.cursor() as cur:
+        try:
+            cur.execute("""INSERT INTO battle_type
+                        (battle_type_name)
+                        VALUES (%s);""",battle_type)
+
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to insert data into database!") from exc
+
+
 def insert_new_starpower_data(db_conn: connection, starpower_data: DataFrame):
     """Inserts new starpower data into the database"""
 
