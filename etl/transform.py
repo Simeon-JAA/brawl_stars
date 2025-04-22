@@ -378,8 +378,7 @@ def battle_to_df(battle: dict, player_tag) -> DataFrame:
     battle_df = pd.DataFrame(battle, index=[0])
     return battle_df
 
-#TODO filter on player_tag and time (should not insert the same battle twice)
-#TODO change battle log format to a dataframe for standardised data
+
 def transform_battle_log_api(db_connection: connection,
                              battle_log_data: list[dict],
                              player_tag: str) -> pd.DataFrame:
