@@ -247,6 +247,24 @@ def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
     return event_data_df[["event_id", "event_version", "mode", "map"]]
 
 
+def get_most_recent_battle_log_time(db_connection: connection, player_tag: str) -> pd.DataFrame:
+    """Returns most recent battle log time for a 
+    given player tag from the database"""
+
+    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+        try:
+            cur.execute("""SELECT MAX(battle_time) AS most_recent_battle_time
+                        FROM battle
+                        WHERE player_tag = %s
+                        LIMIT 1;""", [player_tag])
+            
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+        else:
+            most_recent_battle_log_time = cur.fetchone()
+            return most_recent_battle_log_time["most_recent_battle_time"]
+            
+            
 def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
 
