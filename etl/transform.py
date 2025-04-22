@@ -403,7 +403,6 @@ def transform_battle_log_api(db_connection: connection,
         battle_df = battle_to_df(battle, player_tag)
         battle_log_df = pd.concat([battle_log_df, battle_df], ignore_index=True)
     
-    print(battle_log_df)
     return battle_log_df
 
 
