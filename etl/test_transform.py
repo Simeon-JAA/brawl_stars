@@ -4,8 +4,8 @@ import pytest
 
 from pandas import DataFrame
 
-from transform import (to_snake_case, brawler_name_value_to_title, valid_trophy_change,
-                       transform_brawl_data_api, transform_single_battle_log_entry,
+from transform import (to_snake_case, brawler_name_value_to_title, to_title,
+                       valid_trophy_change, transform_brawl_data_api, battle_log_to_df,
                        format_datetime)
 
 
@@ -103,6 +103,20 @@ def test_to_snake_case_5v5_leading_space():
 
     result = to_snake_case("    brawlBall5V5")
     assert result == "brawl_ball_5v5"
+
+def test_to_title_raises_value_error_with_empty_string():
+    """Tests value error is raised for to_title
+    if input is an empty string"""
+
+    with pytest.raises(ValueError):
+        to_title("")
+
+def test_to_title_raises_type_error_with_empty_string():
+    """Tests type error is raised for to_title
+    if input is not a string"""
+
+    with pytest.raises(TypeError):
+        to_title([2, 3, 4])
 
 def test_brawler_name_value_to_title_base_case_1():
     """Tests base case for brawler_name_value_to_title"""
@@ -259,19 +273,19 @@ def test_transform_single_battle_log_entry_raises_type_error_with_wrong_input():
     if the input is not a dictionary"""
 
     with pytest.raises(TypeError):
-        transform_single_battle_log_entry("This is not a dictionary!")
+        battle_log_to_df("This is not a dictionary!")
 
 def test_transform_single_battle_log_entry_raises_value_error_with_empty_dictionary():
     """Tests value error is raised for transform_single_battle_log_entry
     if the dictionary input is empty"""
 
     with pytest.raises(ValueError):
-        transform_single_battle_log_entry({})
+        battle_log_to_df({})
 
 def test_transform_single_battle_log_entry_returns_dataframe(mock_single_bs_battle):
     """Tests transform_single_battle_log_entry returns a dataframe"""
 
-    result = transform_single_battle_log_entry(mock_single_bs_battle)
+    result = battle_log_to_df(mock_single_bs_battle)
     assert isinstance(result, DataFrame)
 
 def test_transform_single_battle_log_entry_returns_correct_columns(mock_single_bs_battle):
@@ -279,7 +293,7 @@ def test_transform_single_battle_log_entry_returns_correct_columns(mock_single_b
 
     desired_columns = ["battle_time", "event_id", "result", 
                        "duration", "battle_type", "trophy_change"]
-    result = transform_single_battle_log_entry(mock_single_bs_battle)
+    result = battle_log_to_df(mock_single_bs_battle)
     assert result.columns.tolist() == desired_columns
 
 if __name__ == "__main__":
