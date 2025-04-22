@@ -115,7 +115,7 @@ CREATE TABLE battle_type (
 DROP TABLE IF EXISTS battle CASCADE;
 CREATE TABLE battle (
   id INT GENERATED ALWAYS AS IDENTITY,
-  player_tag VARCHAR(50),
+  player_tag VARCHAR(50) NOT NULL,
   battle_time TIMESTAMPTZ,
   bs_event_id INT NOT NULL,
   battle_type_id SMALLINT NOT NULL,
