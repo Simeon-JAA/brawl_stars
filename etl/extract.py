@@ -247,7 +247,7 @@ def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
     return event_data_df[["event_id", "event_version", "mode", "map"]]
 
 
-def get_most_recent_battle_log_time(db_connection: connection, player_tag: str) -> pd.DataFrame:
+def get_most_recent_battle_log_time(db_connection: connection, player_tag: str):
     """Returns most recent battle log time for a 
     given player tag from the database"""
 
