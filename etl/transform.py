@@ -173,7 +173,8 @@ def add_gadget_changes_version(db_connection: connection,
 
 def generate_starpower_changes(starpower_db_df: DataFrame,
                                starpower_api_df: DataFrame) -> DataFrame:
-    """Compares data between database and api for starpowers and returns the difference to be inserted"""
+    """Compares starpower data between database and api
+    and returns any differences to be inserted"""
 
     starpower_data_to_load = DataFrame(columns={"brawler_id": [],
                                                 "brawler_name": [],
@@ -259,7 +260,9 @@ def generate_brawler_changes(brawler_db_df: DataFrame,
         api_brawler_data = api_brawler_data.reset_index(drop=True).sort_index(axis=1)
 
         if db_brawler_data.empty:
-            brawler_data_to_load = concat([brawler_data_to_load, api_brawler_data], ignore_index=True)
+            brawler_data_to_load = concat([brawler_data_to_load,
+                                           api_brawler_data],
+                                           ignore_index=True)
 
         else:
             comparison_df = db_brawler_data.compare(other=api_brawler_data,
@@ -269,7 +272,9 @@ def generate_brawler_changes(brawler_db_df: DataFrame,
             differences_df = comparison_df.loc[(comparison_df.xs("databse",axis=1, level=1) != comparison_df.xs("api", axis=1, level=1)).any(axis=1)]
             differences_filtered_df = differences_df.xs("api", axis=1, level=1)
 
-            brawler_data_to_load = concat([brawler_data_to_load, differences_filtered_df], ignore_index=True)
+            brawler_data_to_load = concat([brawler_data_to_load,
+                                           differences_filtered_df],
+                                           ignore_index=True)
 
     return brawler_data_to_load
 
@@ -363,17 +368,17 @@ def normalise_battle(battle: dict, player_tag: str) -> dict:
     battle["brawler_played_id"] = get_brawler_played_from_battle_log(battle["battle"]["teams"], player_tag)
     battle["star_player"] = is_star_player(battle["battle"]["starPlayer"], player_tag)
     del battle["battle"]
-    return battle    
+    return battle
 
-      
+
 def battle_to_df(battle: dict, player_tag) -> DataFrame:
     """Transforms single battle to a dataframe"""
 
     if not isinstance(battle, dict):
-        raise TypeError("Error: Battle entry is not a dictionary!") 
+        raise TypeError("Error: Battle entry is not a dictionary!")
     if not battle:
         raise ValueError("Error: Battle entry is empty!")
-   
+
     battle = normalise_battle(battle, player_tag)
     battle_df = pd.DataFrame(battle, index=[0])
     return battle_df
@@ -398,10 +403,10 @@ def transform_battle_log_api(db_connection: connection,
         #Ignore map maker events
         if battle["event"]["id"] == 0:
             continue
-        
+
         battle_df = battle_to_df(battle, player_tag)
         battle_log_df = pd.concat([battle_log_df, battle_df], ignore_index=True)
-    
+
     return battle_log_df
 
 
