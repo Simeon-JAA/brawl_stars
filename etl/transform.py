@@ -8,7 +8,7 @@ from pandas import DataFrame, concat
 from psycopg2.extensions import connection
 
 from extract import (get_most_recent_starpower_version, get_most_recent_gadget_version,
-                     get_most_recent_brawler_version)
+                     get_most_recent_brawler_version, get_most_recent_battle_log_time)
 
 
 def brawler_name_value_to_title(brawler_data: dict) -> dict:
@@ -307,25 +307,26 @@ def get_brawler_played_from_battle_log(battle_teams: list[list[dict]], player_ta
     for team in battle_teams:
         all_teams.extend(team)
 
-    try:
-        for player_data in all_teams:
-            if player_data["tag"] == f"#{player_tag}":
-                return player_data["brawler"]["id"]
+    for player_data in all_teams:
+        if player_data["tag"] == f"{player_tag}":
+            return player_data["brawler"]["id"]
 
-    except Exception as exc:
-        raise ValueError("Error: Player tag not found in battle log!") from exc
+    raise ValueError("Error: Player tag not found in battle log!")
 
 
 def is_star_player(star_player_data: dict, player_tag: str) -> bool:
     """Returns true if star player and false if not"""
 
-    if star_player_data["tag"] is None:
-        return False
+    if star_player_data is None:
+        return None
     if star_player_data["tag"] == f"#{player_tag}":
         return True
     return False
 
 
+#TODO complete function (some special events returned from the api return a trophyChange key
+# which is not representative fr in game data)
+# need to look at more data to establish rules for this
 def valid_trophy_change(battle_log_entry: dict) -> bool:
     """Checks if the 'trophyChange' key exsists and if the key is valid
     (some special events returned from the api return a trophyChange key
@@ -335,63 +336,75 @@ def valid_trophy_change(battle_log_entry: dict) -> bool:
         raise TypeError("Error: battle log is not a dictionary!")
     if not battle_log_entry:
         raise ValueError("Error: battle log is empty!")
-    
+
     if "trophyChange" not in battle_log_entry["battle"].keys():
         return False
-    
+
     return True
 
-def transform_single_battle_log_entry(single_battle_log_entry: dict) -> DataFrame:
-    """Transforms single entry of a battle log into a dataframe"""
-    
-    if not isinstance(single_battle_log_entry, dict):
-        raise TypeError("Error: Battle log entry is not a dictionary!") 
-    if not single_battle_log_entry:
-        raise ValueError("Error: Battle log entry is empty!")
-    
-    single_battle_log_entry_df = pd.DataFrame()
-    single_battle_log_entry_df["battle_time"] = format_datetime(single_battle_log_entry["battleTime"])
-    single_battle_log_entry_df["event_id"] = single_battle_log_entry["event"]["id"]
-    single_battle_log_entry_df["result"] = single_battle_log_entry["battle"]["result"]
-    single_battle_log_entry_df["duration"] = single_battle_log_entry["battle"]["duration"]
-    single_battle_log_entry_df["battle_type"] = single_battle_log_entry["battle"]["type"]
-    if valid_trophy_change(single_battle_log_entry):
-        ###TODO complete
-        single_battle_log_entry_df["trophy_change"] = 0
-    else:
-        single_battle_log_entry_df["trophy_change"] = None
-        
-        
 
-    return single_battle_log_entry_df
+def normalise_battle(battle: dict, player_tag: str) -> dict:
+    """Normalises a single battle log entry to load into a dataframe"""
+
+    battle["player_tag"] = player_tag
+    battle["battle_time"] = format_datetime(battle["battleTime"])
+    del battle["battleTime"]
+
+    battle["event_id"] = battle["event"]["id"]
+    del battle["event"]
+
+    battle["battle_type"] = to_title(battle["battle"]["type"])
+    battle["result"] = to_title(battle["battle"]["result"])
+    battle["duration"] = battle["battle"]["duration"]
+    if valid_trophy_change(battle):
+        battle["trophy_change"] = battle["battle"]["trophyChange"]
+    else:
+        battle["trophy_change"] = None
+    battle["brawler_played_id"] = get_brawler_played_from_battle_log(battle["battle"]["teams"], player_tag)
+    battle["star_player"] = is_star_player(battle["battle"]["starPlayer"], player_tag)
+    del battle["battle"]
+    return battle    
+
+      
+def battle_to_df(battle: dict, player_tag) -> DataFrame:
+    """Transforms single battle to a dataframe"""
+
+    if not isinstance(battle, dict):
+        raise TypeError("Error: Battle entry is not a dictionary!") 
+    if not battle:
+        raise ValueError("Error: Battle entry is empty!")
+   
+    battle = normalise_battle(battle, player_tag)
+    battle_df = pd.DataFrame(battle, index=[0])
+    return battle_df
 
 #TODO filter on player_tag and time (should not insert the same battle twice)
 #TODO change battle log format to a dataframe for standardised data
-def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> pd.DataFrame:
+def transform_battle_log_api(db_connection: connection,
+                             battle_log_data: list[dict],
+                             player_tag: str) -> pd.DataFrame:
     """Transforms player battle log and returns desired values"""
 
-    battle_log = []
+    battle_log_df = pd.DataFrame(columns=[ "player_tag", "battle_time", "event_id", "result",
+                                       "duration", "battle_type", "trophy_change", "star_player",
+                                       "brawler_played_id"])
+
+    most_recent_battle_log_time = get_most_recent_battle_log_time(db_connection,
+                                                                  player_tag)
+    if most_recent_battle_log_time:
+        battle_log_data = [battle for battle in battle_log_data
+                           if battle["battleTime"] > most_recent_battle_log_time]
 
     for battle in battle_log_data["items"]:
-        battle_to_append = {}
-        print(battle)
-        break
-        battle_to_append["player_tag"] = player_tag
-        battle_to_append["time"] = format_datetime(battle["battleTime"])
-        battle_to_append["event_id"] = battle["event"]["id"]
-        battle_to_append["map"] = battle["event"]["map"].title()
-        battle_to_append["type"] = battle["battle"]["type"].title()
-        battle_to_append["result"] = battle["battle"]["result"].title()
-        battle_to_append["duration"] = battle["battle"]["duration"]
-        if "trophyChange" not in battle["battle"].keys():
-            battle_to_append["trophy_change"] = None
-        else:
-            battle_to_append["trophy_change"] = battle["battle"]["trophyChange"]
-        battle_to_append["brawler_id"] = get_brawler_played_from_battle_log(battle["battle"]["teams"], player_tag)
-        battle_to_append["star_player"] = is_star_player(battle["battle"]["starPlayer"], player_tag)
-        battle_log.append(battle_to_append)
-
-    return battle_log
+        #Ignore map maker events
+        if battle["event"]["id"] == 0:
+            continue
+        
+        battle_df = battle_to_df(battle, player_tag)
+        battle_log_df = pd.concat([battle_log_df, battle_df], ignore_index=True)
+    
+    print(battle_log_df)
+    return battle_log_df
 
 
 if __name__ =="__main__":
