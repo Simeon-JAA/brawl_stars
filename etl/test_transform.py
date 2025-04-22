@@ -280,21 +280,22 @@ def test_battle_to_df_raises_value_error_with_empty_dictionary():
     if the dictionary input is empty"""
 
     with pytest.raises(ValueError):
-        battle_to_df({})
+        battle_to_df({}, "#LLPCV2GVP")
 
 def test_battle_to_df_returns_dataframe(mock_single_bs_battle):
     """Tests battle_to_df returns a dataframe"""
 
-    result = battle_to_df(mock_single_bs_battle, "")
+    result = battle_to_df(mock_single_bs_battle, "#LLPCV2GVP")
     assert isinstance(result, DataFrame)
 
 def test_battle_to_df_returns_correct_columns(mock_single_bs_battle):
     """Tests battle_to_df returns the correct columns"""
 
-    desired_columns = ["battle_time", "event_id", "result", 
-                       "duration", "battle_type", "trophy_change"]
-    result = battle_to_df(mock_single_bs_battle)
-    assert result.columns.tolist() == desired_columns
+    desired_columns = ["player_tag", "battle_time", "event_id", "result", 
+                       "duration", "battle_type", "trophy_change", "brawler_played_id",
+                       "star_player"]
+    result = battle_to_df(mock_single_bs_battle, "#LLPCV2GVP")
+    assert result.columns.tolist().sort() == desired_columns.sort()
 
 if __name__ == "__main__":
 

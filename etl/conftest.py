@@ -36,8 +36,8 @@ def mock_single_bs_battle():
                                    'brawler': {'id': 16000025,
                                                'name': 'CARL',
                                                'power': 11,
-                                               'trophies': 16}}
-                                  }, 
+                                               'trophies': 16}},
+                                  
                     'teams': [[{'tag': '#LLPCV2GVP', 'name': 'chihiro.', 'brawler': 
                                 {'id': 16000025, 'name': 'CARL', 'power': 11, 'trophies': 16}},
                                 {'tag': '#8QC8RP02', 'name': '🥀 | sͥimͣzͫ♑', 'brawler': 
@@ -49,4 +49,4 @@ def mock_single_bs_battle():
                                 {'tag': '#J8J8L20UL', 'name': 'mikikikiriki', 'brawler': 
                                  {'id': 16000029, 'name': 'BEA', 'power': 11, 'trophies': 16}},
                                  {'tag': '#Y98JQCQJ8', 'name': 'Benji', 'brawler':
-                                  {'id': 16000002, 'name': 'BULL', 'power': 11, 'trophies': 16}}]]}
+                                  {'id': 16000002, 'name': 'BULL', 'power': 11, 'trophies': 16}}]]}}
