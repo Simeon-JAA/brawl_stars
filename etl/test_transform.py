@@ -5,7 +5,7 @@ import pytest
 from pandas import DataFrame
 
 from transform import (to_snake_case, brawler_name_value_to_title, to_title,
-                       valid_trophy_change, transform_brawl_data_api, battle_log_to_df,
+                       valid_trophy_change, transform_brawl_data_api, battle_to_df,
                        format_datetime)
 
 
@@ -268,32 +268,32 @@ def test_valid_trophy_change_returns_false_without_trophy_change_key(mock_single
     result = valid_trophy_change(mock_single_bs_battle)
     assert result == False
 
-def test_transform_single_battle_log_entry_raises_type_error_with_wrong_input():
-    """Tests type error is raised for transform_single_battle_log_entry
+def test_battle_to_df_raises_type_error_with_wrong_input():
+    """Tests type error is raised for battle_to_df
     if the input is not a dictionary"""
 
     with pytest.raises(TypeError):
-        battle_log_to_df("This is not a dictionary!")
+        battle_to_df("This is not a dictionary!")
 
-def test_transform_single_battle_log_entry_raises_value_error_with_empty_dictionary():
-    """Tests value error is raised for transform_single_battle_log_entry
+def test_battle_to_df_raises_value_error_with_empty_dictionary():
+    """Tests value error is raised for battle_to_df
     if the dictionary input is empty"""
 
     with pytest.raises(ValueError):
-        battle_log_to_df({})
+        battle_to_df({})
 
-def test_transform_single_battle_log_entry_returns_dataframe(mock_single_bs_battle):
-    """Tests transform_single_battle_log_entry returns a dataframe"""
+def test_battle_to_df_returns_dataframe(mock_single_bs_battle):
+    """Tests battle_to_df returns a dataframe"""
 
-    result = battle_log_to_df(mock_single_bs_battle)
+    result = battle_to_df(mock_single_bs_battle, "")
     assert isinstance(result, DataFrame)
 
-def test_transform_single_battle_log_entry_returns_correct_columns(mock_single_bs_battle):
-    """Tests transform_single_battle_log_entry returns the correct columns"""
+def test_battle_to_df_returns_correct_columns(mock_single_bs_battle):
+    """Tests battle_to_df returns the correct columns"""
 
     desired_columns = ["battle_time", "event_id", "result", 
                        "duration", "battle_type", "trophy_change"]
-    result = battle_log_to_df(mock_single_bs_battle)
+    result = battle_to_df(mock_single_bs_battle)
     assert result.columns.tolist() == desired_columns
 
 if __name__ == "__main__":
