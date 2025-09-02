@@ -1,15 +1,10 @@
-DROP DATABASE IF EXISTS brawl; 
-
-CREATE DATABASE brawl;
-
-\c brawl;
-DROP TABLE IF EXISTS brawler CASCADE;
+DROP TABLE IF EXISTS brawler;
 CREATE TABLE brawler (
-  id SMALLINT GENERATED ALWAYS AS IDENTITY,
-  brawler_id INT NOT NULL,
-  brawler_version SMALLINT NOT NULL,
+  id INTGER PRIMARY KEY,
+  brawler_id INTEGER NOT NULL,
+  brawler_version INTEGER NOT NULL,
   brawler_name TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (brawler_id, brawler_version)
 );
 
@@ -21,7 +16,7 @@ CREATE TABLE starpower (
   brawler_id INT NOT NULL,
   brawler_version SMALLINT NOT NULL,
   starpower_name TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (starpower_id, starpower_version),
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
 );
@@ -34,7 +29,7 @@ CREATE TABLE gadget (
   brawler_id INT NOT NULL,
   brawler_version SMALLINT NOT NULL,
   gadget_name TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (gadget_id, gadget_version),
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
 );
@@ -47,7 +42,7 @@ CREATE TABLE gear (
   brawler_id INT NOT NULL,
   brawler_version SMALLINT NOT NULL,
   gear_name TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (gear_id, gear_version),
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
 );
@@ -56,7 +51,7 @@ DROP TABLE IF EXISTS player CASCADE;
 CREATE TABLE player (
   id SMALLINT GENERATED ALWAYS AS IDENTITY,
   player_tag VARCHAR(50) UNIQUE NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now'))
   PRIMARY KEY (player_tag)
 );
 
@@ -66,7 +61,7 @@ CREATE TABLE player_name (
   player_tag VARCHAR(50) NOT NULL,
   player_name TEXT NOT NULL,
   player_name_version SMALLINT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now'))
   PRIMARY KEY (id),
   FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
@@ -87,7 +82,7 @@ CREATE TABLE player_tropies (
   player_tag VARCHAR(50) NOT NULL,
   trophies SMALLINT NOT NULL,
   highest_trophies SMALLINT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now'))
   PRIMARY KEY (id),
   FOREIGN KEY (player_tag) REFERENCES player (player_tag)
 );
@@ -99,7 +94,7 @@ CREATE TABLE bs_event (
   bs_event_version SMALLINT NOT NULL,
   mode TEXT NOT NULL,
   map TEXT NOT NULL, 
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TEXT DEFAULT (datetime('now'))
   updated_at TIMESTAMPTZ,
   PRIMARY KEY (bs_event_id)
 );
