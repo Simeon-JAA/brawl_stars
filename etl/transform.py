@@ -8,7 +8,9 @@ from pandas import DataFrame, concat
 from psycopg2.extensions import connection
 
 from extract import (get_most_recent_starpower_version, get_most_recent_gadget_version,
-                     get_most_recent_brawler_version, get_most_recent_battle_log_time)
+                     get_most_recent_brawler_version, get_most_recent_battle_log_time,
+                     get_distinct_battle_types, get_distinct_event_ids)
+from load import (insert_new_battle_type_data, insert_new_event_data)
 
 
 def brawler_name_value_to_title(brawler_data: dict) -> dict:
@@ -348,7 +350,7 @@ def valid_trophy_change(battle_log_entry: dict) -> bool:
     return True
 
 
-def normalise_battle(battle: dict, player_tag: str) -> dict:
+def normalise_battle(db_connection: connection, battle: dict, player_tag: str) -> dict:
     """Normalises a single battle log entry to load into a dataframe"""
 
     battle["player_tag"] = player_tag
@@ -356,6 +358,11 @@ def normalise_battle(battle: dict, player_tag: str) -> dict:
     del battle["battleTime"]
 
     battle["event_id"] = battle["event"]["id"]
+    #Insert missing event ids
+    if battle["event_id"] not in get_distinct_event_ids(db_connection):
+        print(battle["event"])
+        # insert_new_event_data(db_connection, battle["event"])
+
     del battle["event"]
 
     battle["battle_type"] = to_title(battle["battle"]["type"])
@@ -371,7 +378,7 @@ def normalise_battle(battle: dict, player_tag: str) -> dict:
     return battle
 
 
-def battle_to_df(battle: dict, player_tag) -> DataFrame:
+def battle_to_df(db_connection: connection, battle: dict, player_tag) -> DataFrame:
     """Transforms single battle to a dataframe"""
 
     if not isinstance(battle, dict):
@@ -379,7 +386,7 @@ def battle_to_df(battle: dict, player_tag) -> DataFrame:
     if not battle:
         raise ValueError("Error: Battle entry is empty!")
 
-    battle = normalise_battle(battle, player_tag)
+    battle = normalise_battle(db_connection, battle, player_tag)
     battle_df = pd.DataFrame(battle, index=[0])
     return battle_df
 
@@ -389,7 +396,7 @@ def transform_battle_log_api(db_connection: connection,
                              player_tag: str) -> pd.DataFrame:
     """Transforms player battle log and returns desired values"""
 
-    battle_log_df = pd.DataFrame(columns=[ "player_tag", "battle_time", "event_id", "result",
+    battle_log_df = pd.DataFrame(columns=["player_tag", "battle_time", "event_id", "result",
                                        "duration", "battle_type", "trophy_change", "star_player",
                                        "brawler_played_id"])
 
@@ -404,8 +411,14 @@ def transform_battle_log_api(db_connection: connection,
         if battle["event"]["id"] == 0:
             continue
 
-        battle_df = battle_to_df(battle, player_tag)
+        battle_df = battle_to_df(db_connection, battle, player_tag)
         battle_log_df = pd.concat([battle_log_df, battle_df], ignore_index=True)
+    
+    #Insert missing battle types
+    battle_types = battle_log_df["battle_type"].unique()
+    for battle_type in battle_types:
+        if battle_type not in get_distinct_battle_types(db_connection):
+            insert_new_battle_type_data(db_connection, battle_type)
 
     return battle_log_df
 

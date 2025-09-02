@@ -52,7 +52,7 @@ def insert_new_battle_type_data(db_conn: connection, battle_type: str):
         try:
             cur.execute("""INSERT INTO battle_type
                         (battle_type_name)
-                        VALUES (%s);""",battle_type)
+                        VALUES (%s);""",[battle_type])
 
         except Exception as exc:
             raise psycopg2.DatabaseError("Error: Unable to insert data into database!") from exc

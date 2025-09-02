@@ -264,7 +264,39 @@ def get_most_recent_battle_log_time(db_connection: connection, player_tag: str):
             most_recent_battle_log_time = cur.fetchone()
             return most_recent_battle_log_time["most_recent_battle_time"]
             
-            
+
+def get_distinct_battle_types(db_connection: connection) -> list[str]:
+    """Returns distinct battle types from the database"""
+
+    with db_connection.cursor() as cur:
+        try:
+            cur.execute("""SELECT DISTINCT battle_type_name
+                        FROM battle_type;""")
+
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+        else:
+            battle_types = cur.fetchall()
+            return battle_types
+
+
+def get_distinct_event_ids(db_connection: connection) -> list[int]:
+    """Returns distinct event ids from the database"""
+
+    with db_connection.cursor() as cur:
+        try:
+            cur.execute("""SELECT DISTINCT bs_event_id
+                        FROM bs_event;""")
+
+        except Exception as exc:
+            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+        else:
+            bs_event_ids = cur.fetchall()
+            return bs_event_ids
+
+
 def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
 
