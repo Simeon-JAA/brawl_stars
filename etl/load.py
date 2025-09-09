@@ -39,7 +39,7 @@ def insert_new_brawler_data(db_conn: connection, brawler_data: DataFrame):
                 cur.execute("""INSERT INTO brawler
                             (brawler_id, brawler_version, brawler_name)
                             VALUES (%s, %s, %s);""", [brawler["brawler_id"],
-                                                      brawler["brawler_version"],
+                                                      brawler["brawler_version"] + 1,
                                                       brawler["brawler_name"]])
             except Exception as exc:
                 raise psycopg2.DatabaseError("Error: Unable to insert brawler data!") from exc
