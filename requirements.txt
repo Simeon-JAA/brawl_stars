@@ -4,3 +4,4 @@ python-dotenv
 pylint
 psycopg2-binary
 pytest
+sqlite3
