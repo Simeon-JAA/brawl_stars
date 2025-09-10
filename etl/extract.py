@@ -1,12 +1,12 @@
 """Extract script to extract data from brawl API and database"""
 
 from os import environ
+import sqlite3
 
 import psycopg2
 import requests
 import pandas as pd
-from psycopg2.extensions import connection
-from psycopg2.extras import RealDictCursor
+from sqlite3 import Connection, Cursor, DatabaseError
 from dotenv import load_dotenv
 
 
@@ -42,62 +42,62 @@ def check_player_tag(player_tag: str) -> bool:
 
 
 ## Database Extraction
-def get_db_connection(config_env) -> connection:
-    """Establishes connection with the database"""
+def get_db_connection(config_env) -> Connection:
+    """Establishes connection with the sqlite3 database"""
 
     try:
-        db_connection = psycopg2.connect(dbname = config_env["dbname"],
-                         user = config_env["user"],
-                         password = config_env["password"],
-                         host = config_env["host"],
-                         port = config_env["port"]
-        )
+        db_connection = sqlite3.connect(database = config_env["dbpath"],
+                                        timeout = 10)
 
     except Exception as exc:
-        raise psycopg2.DatabaseError("Error: Cannot establish connection to database!") from exc
+        raise DatabaseError("Error: Cannot establish connection to database!") from exc
 
     return db_connection
 
 
-def get_most_recent_brawler_starpowers(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler starpowers from database"""
+def get_starpowers_latest_version(db_connection: Connection) -> pd.DataFrame:
+    """Get lastest version of all starpowers from database"""
 
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
-        try:
-            cur.execute("""SELECT DISTINCT b.brawler_id, b.brawler_name,
-                        sp.starpower_id, sp.starpower_version, sp.starpower_name
-                        FROM brawler b
-                        INNER JOIN (SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
-                                    FROM brawler b_2
-                                    GROUP BY b_2.brawler_id) b_max
-                        ON b.brawler_id = b_max.brawler_id 
-                        AND b.brawler_version = b_max.brawler_version
-                        INNER JOIN starpower sp ON b.brawler_id = sp.brawler_id
-                        INNER JOIN (SELECT sp_2.starpower_id, MAX(sp_2.starpower_version) AS starpower_version
-                                    FROM starpower sp_2
-                                    GROUP BY sp_2.starpower_id) sp_max
-                        ON sp.starpower_id = sp_max.starpower_id
-                        AND sp.starpower_version = sp_max.starpower_version
-                        GROUP BY b.brawler_id, b.brawler_version, b.brawler_name,
-                        sp.starpower_id, sp.starpower_version, sp.starpower_name;""")
+    cur = db_connection.cursor(factory = Cursor)
 
-            most_recent_brawler_data = cur.fetchall()
+    try:
+        response = cur.execute("""
+            SELECT DISTINCT b.brawler_id, b.brawler_name,
+            sp.starpower_id, sp.starpower_version, sp.starpower_name
+            FROM brawler b
+            INNER JOIN (
+                SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
+                FROM brawler b_2
+                GROUP BY b_2.brawler_id) b_max
+            ON b.brawler_id = b_max.brawler_id 
+            AND b.brawler_version = b_max.brawler_version
+            INNER JOIN starpower sp ON b.brawler_id = sp.brawler_id
+            INNER JOIN (
+                SELECT sp_2.starpower_id, MAX(sp_2.starpower_version) AS starpower_version
+                FROM starpower sp_2
+                GROUP BY sp_2.starpower_id) sp_max
+            ON sp.starpower_id = sp_max.starpower_id
+            AND sp.starpower_version = sp_max.starpower_version
+            GROUP BY b.brawler_id, b.brawler_version, b.brawler_name,
+            sp.starpower_id, sp.starpower_version, sp.starpower_name;""")
 
-        except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+        starpowers_latest_version = cur.fetchall()
 
-    most_recent_brawler_data_df = pd.DataFrame(data=most_recent_brawler_data,
-                                               columns=("brawler_id", "brawler_name",
-                                                        "starpower_id", "starpower_version",
-                                                        "starpower_name"))
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
-    return most_recent_brawler_data_df
+    starpowers_latest_version_df = pd.DataFrame(
+        data=starpowers_latest_version,
+        columns=("brawler_id", "brawler_name",
+                 "starpower_id", "starpower_version", "starpower_name"))
+
+    return starpowers_latest_version_df
 
 
-def get_most_recent_brawler_gadgets(db_connection: connection) -> pd.DataFrame:
+def get_most_recent_brawler_gadgets(db_connection: Connection) -> pd.DataFrame:
     """Returns most recent brawler gadgets from database"""
 
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+    with db_connection.cursor(factory=Cursor) as cur:
         try:
             cur.execute("""SELECT DISTINCT b.brawler_id, b.brawler_name,
                         g.gadget_id, g.gadget_version, g.gadget_name
@@ -129,7 +129,7 @@ def get_most_recent_brawler_gadgets(db_connection: connection) -> pd.DataFrame:
     return most_recent_brawler_data_df
 
 
-def get_most_recent_brawler_version(db_connection: connection, brawler_id: int) -> int:
+def get_most_recent_brawler_version(db_connection: Connection, brawler_id: int) -> int:
     """Returns most recent brawler version"""
 
     if not isinstance(brawler_id, int):
@@ -150,7 +150,7 @@ def get_most_recent_brawler_version(db_connection: connection, brawler_id: int) 
     return max_brawler_version
 
 
-def get_most_recent_starpower_version(db_connection: connection, starpower_id: int) -> int:
+def get_most_recent_starpower_version(db_connection: Connection, starpower_id: int) -> int:
     """Returns most recent star power version"""
 
     if not isinstance(starpower_id, int):
@@ -171,7 +171,7 @@ def get_most_recent_starpower_version(db_connection: connection, starpower_id: i
     return max_starpower_version
 
 
-def get_most_recent_gadget_version(db_connection: connection, gadget_id: int) -> int:
+def get_most_recent_gadget_version(db_connection: Connection, gadget_id: int) -> int:
     """Returns most recent gadget version"""
 
     if not isinstance(gadget_id, int):
@@ -192,10 +192,10 @@ def get_most_recent_gadget_version(db_connection: connection, gadget_id: int) ->
     return max_gadget_version
 
 
-def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
+def get_most_recent_brawler_data(db_connection: Connection) -> pd.DataFrame:
     """Returns most recent brawler data from database"""
 
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+    with db_connection.cursor(factory = Cursor) as cur:
         try:
             cur.execute("""SELECT DISTINCT b.brawler_id, b.brawler_name
                         FROM brawler b
@@ -216,10 +216,10 @@ def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
     return most_recent_brawler_data_df
 
 
-def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
+def get_most_recent_event_data(db_connection: Connection) -> pd.DataFrame:
     """Returns most recent event data from database"""
 
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+    with db_connection.cursor(factory = Cursor) as cur:
         try:
             cur.execute("""SELECT e.bs_event_id, e.bs_event_version, e.mode, e.map
                         FROM bs_event e
@@ -396,11 +396,17 @@ if __name__ =="__main__":
 
     config = environ
 
-    api_header = get_api_header(config["api_token"])
-    bs_player_tag  = config["player_tag"]
+    conn = get_db_connection(config)
 
-    brawler_data_database = extract_brawler_data_database(config)
-    brawler_data_api = extract_brawler_data_api(config)
+    get_starpowers_latest_version(conn)
 
-    player_data = get_api_player_data(api_header, bs_player_tag)
-    player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
+    conn.close()
+
+    # api_header = get_api_header(config["api_token"])
+    # bs_player_tag  = config["player_tag"]
+
+    # brawler_data_database = extract_brawler_data_database(config)
+    # brawler_data_api = extract_brawler_data_api(config)
+
+    # player_data = get_api_player_data(api_header, bs_player_tag)
+    # player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
