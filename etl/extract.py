@@ -2,16 +2,14 @@
 
 from os import environ
 import sqlite3
+from sqlite3 import Connection, Cursor, DatabaseError
 
-import psycopg2
 import requests
 import pandas as pd
-from sqlite3 import Connection, Cursor, DatabaseError
 from dotenv import load_dotenv
 
 
 ## Non extraction functions
-
 def format_player_tag(player_tag: str) -> str:
     """Formats player tag"""
 
@@ -225,7 +223,7 @@ def get_starpower_latest_version_id(db_connection: Connection, starpower_id: int
             SELECT MAX(starpower_version)
             FROM starpower
             WHERE starpower_id = %s;""",[starpower_id])
-            
+
         starpower_latest_version_id = cur.fetchone()[0]
 
     except Exception as exc:
@@ -390,15 +388,13 @@ if __name__ =="__main__":
 
     conn = get_db_connection(config)
 
-    get_starpowers_latest_version(conn)
-
-    conn.close()
-
     # api_header = get_api_header(config["api_token"])
     # bs_player_tag  = config["player_tag"]
 
-    # brawler_data_database = extract_brawler_data_database(config)
+    brawlers_latest_version_df = get_brawlers_latest_version(conn)
     # brawler_data_api = extract_brawler_data_api(config)
 
     # player_data = get_api_player_data(api_header, bs_player_tag)
     # player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
+
+    conn.close()
