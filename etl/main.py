@@ -4,9 +4,9 @@ from os import environ
 
 from dotenv import load_dotenv
 
-from extract import (extract_brawler_data_api, get_most_recent_brawler_data,
-                     get_most_recent_brawler_gadgets, get_most_recent_brawler_starpowers,
-                     get_most_recent_event_data, extract_player_battle_log_api,
+from extract import (extract_brawler_data_api, get_brawlers_latest_version,
+                     get_gadgets_latest_version, get_starpowers_latest_version,
+                     get_events_latest_version, extract_player_battle_log_api,
                      get_db_connection, extract_event_data_api)
 from transform import (transform_brawl_data_api, generate_starpower_changes,
                        brawl_api_data_to_df, add_starpower_changes_version,
@@ -26,10 +26,10 @@ def etl_brawler():
     conn = get_db_connection(config)
 
     # Extract - Brawler data
-    brawler_data_database_df = get_most_recent_brawler_data(conn)
-    brawler_starpower_data_database_df = get_most_recent_brawler_starpowers(conn)
-    brawler_gadget_data_database_df = get_most_recent_brawler_gadgets(conn)
-    event_data_database_df = get_most_recent_event_data(conn)
+    brawler_data_database_df = get_brawlers_latest_version(conn)
+    brawler_starpower_data_database_df = get_starpowers_latest_version(conn)
+    brawler_gadget_data_database_df = get_gadgets_latest_version(conn)
+    event_data_database_df = get_events_latest_version(conn)
     brawler_data_api = extract_brawler_data_api(config)
     event_data_api = extract_event_data_api(config)
 
