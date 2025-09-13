@@ -60,19 +60,19 @@ def get_starpowers_latest_version(db_connection: Connection) -> pd.DataFrame:
     try:
         cur = db_connection.cursor(factory=Cursor)
         cur.execute("""
-           WITH max_starpowers AS (
+           WITH latest_starpowers AS (
               SELECT 
                 *,
                 ROW_NUMBER() OVER (PARTITION BY starpower_id ORDER BY starpower_version DESC) rn
                 FROM starpower)
             SELECT 
-              msp.starpower_id, msp.starpower_version, msp.starpower_name,
+              lsp.starpower_id, lsp.starpower_version, lsp.starpower_name,
                 b.brawler_id, b.brawler_name
-            FROM max_starpowers msp
+            FROM latest_starpowers lsp
             INNER JOIN brawler b
-            ON msp.brawler_id = b.brawler_id AND msp.brawler_version = b.brawler_version
+            ON lsp.brawler_id = b.brawler_id AND lsp.brawler_version = b.brawler_version
             WHERE rn = 1
-            ORDER BY msp.starpower_id;""")
+            ORDER BY lsp.starpower_id;""")
 
         starpowers_latest_version = cur.fetchall()
 
@@ -93,25 +93,19 @@ def get_gadgets_latest_version(db_connection: Connection) -> pd.DataFrame:
     try:
         cur = db_connection.cursor(factory=Cursor)
         cur.execute("""
-            SELECT DISTINCT b.brawler_id, b.brawler_name,
-            g.gadget_id, g.gadget_version, g.gadget_name
-            FROM brawler b
-            INNER JOIN (
-                SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
-                FROM brawler b_2
-                GROUP BY b_2.brawler_id) b_max
-            ON b.brawler_id = b_max.brawler_id 
-            AND b.brawler_version = b_max.brawler_version
-            INNER JOIN gadget g 
-            ON b.brawler_id = g.brawler_id 
-            INNER JOIN (
-                SELECT g_2.gadget_id, MAX(g_2.gadget_version) AS gadget_version
-                FROM gadget g_2
-                GROUP BY g_2.gadget_id) g_max
-            ON g.gadget_id = g_max.gadget_id
-            AND g.gadget_version = g_max.gadget_version
-            GROUP BY b.brawler_id, b.brawler_version, b.brawler_name,
-            g.gadget_id, g.gadget_version, g.gadget_name;""")
+           WITH latest_gadgets AS (
+              SELECT 
+                *,
+                ROW_NUMBER() OVER (PARTITION BY gadget_id ORDER BY gadget_version DESC) rn
+                FROM gadget)
+            SELECT 
+              lg.gadget_id, lg.gadget_version, lg.gadget_name,
+                b.brawler_id, b.brawler_name
+            FROM latest_gadgets lg
+            INNER JOIN brawler b
+            ON lg.brawler_id = b.brawler_id AND lg.brawler_version = b.brawler_version
+            WHERE rn = 1
+            ORDER BY lg.gadget_id;""")
 
         gadgets_latest_version = cur.fetchall()
 
@@ -132,12 +126,12 @@ def get_brawlers_latest_version(db_connection: Connection) -> pd.DataFrame:
     try:
         cur = db_connection.cursor(factory=Cursor)
         cur.execute("""
-            WITH max_brawlers AS (
+            WITH latest_brawlers AS (
               SELECT *, ROW_NUMBER() OVER (PARTITION BY brawler_id ORDER BY brawler_version DESC) rn
               FROM brawler
             )
-            SELECT brawler_id, brawler_name
-            FROM max_brawlers mb
+            SELECT lb.brawler_id, lb.brawler_name
+            FROM latest_brawlers lb
             WHERE rn = 1
             ORDER BY brawler_id;""")
 
