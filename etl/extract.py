@@ -60,24 +60,19 @@ def get_starpowers_latest_version(db_connection: Connection) -> pd.DataFrame:
     try:
         cur = db_connection.cursor(factory=Cursor)
         cur.execute("""
-            SELECT DISTINCT b.brawler_id, b.brawler_name,
-            sp.starpower_id, sp.starpower_version, sp.starpower_name
-            FROM brawler b
-            INNER JOIN (
-                SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
-                FROM brawler b_2
-                GROUP BY b_2.brawler_id) b_max
-            ON b.brawler_id = b_max.brawler_id 
-            AND b.brawler_version = b_max.brawler_version
-            INNER JOIN starpower sp ON b.brawler_id = sp.brawler_id
-            INNER JOIN (
-                SELECT sp_2.starpower_id, MAX(sp_2.starpower_version) AS starpower_version
-                FROM starpower sp_2
-                GROUP BY sp_2.starpower_id) sp_max
-            ON sp.starpower_id = sp_max.starpower_id
-            AND sp.starpower_version = sp_max.starpower_version
-            GROUP BY b.brawler_id, b.brawler_version, b.brawler_name,
-            sp.starpower_id, sp.starpower_version, sp.starpower_name;""")
+           WITH max_starpowers AS (
+              SELECT 
+                *,
+                ROW_NUMBER() OVER (PARTITION BY starpower_id ORDER BY starpower_version DESC) rn
+                FROM starpower)
+            SELECT 
+              msp.starpower_id, msp.starpower_version, msp.starpower_name,
+                b.brawler_id, b.brawler_name
+            FROM max_starpowers msp
+            INNER JOIN brawler b
+            ON msp.brawler_id = b.brawler_id AND msp.brawler_version = b.brawler_version
+            WHERE rn = 1
+            ORDER BY msp.starpower_id;""")
 
         starpowers_latest_version = cur.fetchall()
 
