@@ -137,15 +137,14 @@ def get_brawlers_latest_version(db_connection: Connection) -> pd.DataFrame:
     try:
         cur = db_connection.cursor(factory=Cursor)
         cur.execute("""
-            SELECT DISTINCT b.brawler_id, b.brawler_name
-            FROM brawler b
-            INNER JOIN (
-                SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
-                FROM brawler b_2
-                GROUP BY b_2.brawler_id) b_max
-            ON b.brawler_id = b_max.brawler_id 
-            AND b.brawler_version = b_max.brawler_version
-            GROUP BY b.brawler_id, b.brawler_version, b.brawler_name;""")
+            WITH max_brawlers AS (
+              SELECT *, ROW_NUMBER() OVER (PARTITION BY brawler_id ORDER BY brawler_version DESC) rn
+              FROM brawler
+            )
+            SELECT brawler_id, brawler_name
+            FROM max_brawlers mb
+            WHERE rn = 1
+            ORDER BY brawler_id;""")
 
         brawlers_latest_version = cur.fetchall()
 
@@ -393,6 +392,7 @@ if __name__ =="__main__":
     starpowers_db_df = get_starpowers_latest_version(conn)
     gadgets_db_df = get_gadgets_latest_version(conn)
     events_db_df = get_events_latest_version(conn)
+    print(brawlers_db_df)
 
     # Extract - Brawler data database
 
