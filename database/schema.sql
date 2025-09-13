@@ -11,9 +11,9 @@ DROP TABLE IF EXISTS starpower;
 CREATE TABLE starpower (
   starpower_id INTEGER NOT NULL,
   starpower_version INTEGER NOT NULL,
+  starpower_name TEXT NOT NULL,
   brawler_id INTEGER NOT NULL,
   brawler_version INTEGER NOT NULL,
-  starpower_name TEXT NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (starpower_id, starpower_version),
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
@@ -23,9 +23,9 @@ DROP TABLE IF EXISTS gadget;
 CREATE TABLE gadget (
   gadget_id INTEGER NOT NULL,
   gadget_version INTEGER NOT NULL,
+  gadget_name TEXT NOT NULL,
   brawler_id INTEGER NOT NULL,
   brawler_version INTEGER NOT NULL,
-  gadget_name TEXT NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (gadget_id, gadget_version),
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
@@ -35,9 +35,9 @@ DROP TABLE IF EXISTS gear;
 CREATE TABLE gear (
   gear_id INTEGER NOT NULL,
   gear_version INTEGER NOT NULL,
+  gear_name TEXT NOT NULL,
   brawler_id INTEGER NOT NULL,
   brawler_version INTEGER NOT NULL,
-  gear_name TEXT NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (gear_id, gear_version),
   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
