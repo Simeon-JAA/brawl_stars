@@ -64,7 +64,8 @@ def get_starpowers_latest_version(db_connection: Connection) -> pd.DataFrame:
               SELECT 
                 *,
                 ROW_NUMBER() OVER (PARTITION BY starpower_id ORDER BY starpower_version DESC) rn
-                FROM starpower)
+                FROM starpower
+            )
             SELECT 
               lsp.starpower_id, lsp.starpower_version, lsp.starpower_name,
                 b.brawler_id, b.brawler_name
@@ -97,7 +98,8 @@ def get_gadgets_latest_version(db_connection: Connection) -> pd.DataFrame:
               SELECT 
                 *,
                 ROW_NUMBER() OVER (PARTITION BY gadget_id ORDER BY gadget_version DESC) rn
-                FROM gadget)
+                FROM gadget
+            )
             SELECT 
               lg.gadget_id, lg.gadget_version, lg.gadget_name,
                 b.brawler_id, b.brawler_name
@@ -151,15 +153,14 @@ def get_events_latest_version(db_connection: Connection) -> pd.DataFrame:
     try:
         cur = db_connection.cursor(factory=Cursor)
         cur.execute("""
-            SELECT e.bs_event_id, e.bs_event_version, e.mode, e.map
-            FROM bs_event e
-            INNER JOIN (
-                SELECT e2.bs_event_id, MAX(e2.bs_event_version) AS bs_event_version
-                FROM bs_event e2
-                GROUP BY e2.bs_event_id) e_max
-            ON e.bs_event_id = e_max.bs_event_id
-            AND e.bs_event_version = e_max.bs_event_version
-            GROUP BY e.bs_event_id, e.bs_event_version, e.mode, e.map;""")
+            WITH latest_events AS (
+              SELECT *, ROW_NUMBER() OVER (PARTITION BY bs_event_id ORDER BY bs_event_version DESC) rn
+              FROM bs_event
+            )
+            SELECT le.bs_event_id, le.bs_event_version, le.mode, le.map
+            FROM latest_events le
+            WHERE rn = 1
+            ORDER BY le.bs_event_id;""")
 
         event_data_latest_version = cur.fetchall()
 
