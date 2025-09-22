@@ -382,16 +382,14 @@ if __name__ =="__main__":
     starpowers_db_df = get_starpowers_latest_version(conn)
     gadgets_db_df = get_gadgets_latest_version(conn)
     events_db_df = get_events_latest_version(conn)
-    print(brawlers_db_df)
 
-    # Extract - Brawler data database
+    # Extract - Brawler data api
+    api_header = get_api_header(config["api_token"])
+    bs_player_tag  = config["player_tag"]
 
-    # api_header = get_api_header(config["api_token"])
-    # bs_player_tag  = config["player_tag"]
+    brawler_data_api = extract_brawler_data_api(config)
 
-    # brawler_data_api = extract_brawler_data_api(config)
-
-    # player_data = get_api_player_data(api_header, bs_player_tag)
-    # player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
+    player_data = get_api_player_data(api_header, bs_player_tag)
+    player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
 
     conn.close()
