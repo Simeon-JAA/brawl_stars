@@ -45,41 +45,42 @@ CREATE TABLE gear (
 
 DROP TABLE IF EXISTS player;
 CREATE TABLE player (
+  player_id INT NOT NULL,
   player_tag VARCHAR(50) UNIQUE NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
-  PRIMARY KEY (player_tag)
+  PRIMARY KEY (player_id)
 );
 
 DROP TABLE IF EXISTS player_name;  
 CREATE TABLE player_name (
   id INTEGER,
-  player_tag VARCHAR(50) NOT NULL,
+  player_id INT  NOT NULL,
   player_name TEXT NOT NULL,
   player_name_version INTEGER NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (id),
-  FOREIGN KEY (player_tag) REFERENCES player (player_tag)
+  FOREIGN KEY (player_id) references player (player_id)
 );
 
 DROP TABLE IF EXISTS player_exp;
 CREATE TABLE player_exp (
 id INTEGER,
-player_tag VARCHAR(50) NOT NULL,
+player_id INT  NOT NULL,
 exp_level INTEGER NOT NULL,
 exp_points INTEGER NOT NULL,
 PRIMARY KEY (id),
-FOREIGN KEY (player_tag) REFERENCES player (player_tag)
+FOREIGN KEY (player_id) references player (player_id)
 );
 
 DROP TABLE IF EXISTS player_tropies;
 CREATE TABLE player_tropies (
   id INTEGER,
-  player_tag VARCHAR(50) NOT NULL,
+  player_id INT  NOT NULL,
   trophies INTEGER NOT NULL,
   highest_trophies INTEGER NOT NULL,
   last_updated TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (id),
-  FOREIGN KEY (player_tag) REFERENCES player (player_tag)
+  FOREIGN KEY (player_id) references player (player_id)
 );
 
 DROP TABLE IF EXISTS bs_event;
@@ -95,7 +96,7 @@ CREATE TABLE bs_event (
 DROP TABLE IF EXISTS battle;
 CREATE TABLE battle (
   id INTEGER,
-  player_tag VARCHAR(50) NOT NULL,
+  player_id INT  NOT NULL,
   battle_time TEXT DEFAULT (datetime('now')),
   bs_event_id INTEGER NOT NULL,
   result TEXT NOT NULL,
@@ -105,5 +106,5 @@ CREATE TABLE battle (
   star_player boolean,
   PRIMARY KEY (id),
   FOREIGN KEY (bs_event_id) REFERENCES bs_event (bs_event_id),
-  FOREIGN KEY (player_tag) REFERENCES player (player_tag)
+  FOREIGN KEY (player_id) references player (player_id)
 );
