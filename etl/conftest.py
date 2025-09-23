@@ -9,6 +9,7 @@ def empty_dataframe():
 
     return pd.DataFrame()
 
+
 ##TODO what is this?? should this not be a dictionary
 @pytest.fixture
 def mock_event_api_dataframe():
