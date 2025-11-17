@@ -93,12 +93,21 @@ CREATE TABLE bs_event (
   PRIMARY KEY (bs_event_id, bs_event_version)
 );
 
-DROP TABLE IF EXISTS battle;
+DROP TABLE IF EXISTS battle_type CASCADE;
+CREATE TABLE battle_type (
+  battle_type_id SMALLINT GENERATED ALWAYS AS IDENTITY,
+  battle_type_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (battle_type_id)
+); 
+
+DROP TABLE IF EXISTS battle CASCADE;
 CREATE TABLE battle (
-  id INTEGER,
-  player_id INT  NOT NULL,
-  battle_time TEXT DEFAULT (datetime('now')),
-  bs_event_id INTEGER NOT NULL,
+  id INT GENERATED ALWAYS AS IDENTITY,
+  player_tag VARCHAR(50) NOT NULL,
+  battle_time TIMESTAMPTZ,
+  bs_event_id INT NOT NULL,
+  battle_type_id SMALLINT NOT NULL,
   result TEXT NOT NULL,
   duration INTEGER NOT NULL,
   trophy_change INTEGER, 
@@ -108,3 +117,4 @@ CREATE TABLE battle (
   FOREIGN KEY (bs_event_id) REFERENCES bs_event (bs_event_id),
   FOREIGN KEY (player_id) references player (player_id)
 );
+

@@ -1,6 +1,8 @@
 """Main pipeline file to ru full etl on brawler data into the database"""
 
 from os import environ
+from datetime import datetime as dt
+
 from dotenv import load_dotenv
 
 from extract import (extract_brawler_data_api, get_brawlers_latest_version,
@@ -17,11 +19,9 @@ from load import (insert_brawler_db, insert_starpower_db, insert_gadget_db,
                   insert_event_db)
 
 
-def etl_brawler():
-    """ETL for brawler data"""
+def etl_brawl_data(config):
+    """ETL for general brawl data"""
 
-    load_dotenv()
-    config = environ
     conn = get_db_connection(config)
 
     # Extract - Brawler data
@@ -32,7 +32,7 @@ def etl_brawler():
     brawler_data_api = extract_brawler_data_api(config)
     event_data_api = extract_event_data_api(config)
 
-    # Transform
+    # Transform - Brawler & Event data
     brawler_data_api = transform_brawl_data_api(brawler_data_api)
     brawler_data_api_df = brawl_api_data_to_df(brawler_data_api)
     brawler_starpower_data_api_df = brawl_api_data_to_df(brawler_data_api, "star_powers")
@@ -65,32 +65,44 @@ def etl_brawler():
     conn.close()
 
 
-def etl_player():
+def etl_player(config):
     """ETL for player data"""
 
-    load_dotenv()
-    config = environ
     bs_player_tag = config["player_tag"]
+    conn = get_db_connection(config)
 
     player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
-    player_data_api = transform_player_data_api(player_data_api)
+    player_data_api = transform_player_data_api(conn, player_data_api)
+
+    conn.close()
 
 
-def etl_battle_log():
+def etl_battle_log(config, bs_player_tag):
     """ETL for player battle log"""
 
-    load_dotenv()
-    config = environ
-    bs_player_tag = config["player_tag"]
+    conn = get_db_connection(config)
 
+    # Extract - Player battle log
     player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
-    player_battle_log_api = transform_battle_log_api(player_battle_log_api, bs_player_tag)
-    for battle in player_battle_log_api:
-        print(battle)
+
+    # Transform - Player battle log
+    player_battle_log_api = transform_battle_log_api(conn, player_battle_log_api, bs_player_tag)
+
+    # Load - Player battle log
+    conn.close()
 
 
 if __name__ =="__main__":
 
-    etl_brawler()
+    load_dotenv()
+    config = environ
 
-    # etl_battle_log()
+    # print(f"ETL pipeline -> Start @ {dt.now()}")
+    # etl_brawl_data(config)
+    # print(f"ETL pipeline -> End @ {dt.now()}")
+
+    player_tag = config["player_tag"]
+    player_tag = player_tag.replace("(", "").replace(")", "").replace("\"", "")
+        # print(f"ETL battle log for {tag} -> Start @ {dt.now()}")
+    etl_battle_log(config, player_tag)
+        # print(f"ETL battle log for {tag} -> End @ {dt.now()}")
