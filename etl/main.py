@@ -3,6 +3,8 @@
 from os import environ
 from dotenv import load_dotenv
 
+from datetime import datetime as dt
+
 from extract import (extract_brawler_data_api, get_brawlers_latest_version,
                      get_gadgets_latest_version, get_starpowers_latest_version,
                      get_events_latest_version, extract_player_battle_log_api,
@@ -90,7 +92,13 @@ def etl_battle_log():
 
 
 if __name__ =="__main__":
-
-    etl_brawler()
+    
+    print(f"ETL started at {dt.now()}")
+    try:
+      etl_brawler()
+    except Exception as e:
+      print(f"ETL Failed at {dt.now()}. {e}")
+    finally:
+      print(f"ETL finished at {dt.now()}")
 
     # etl_battle_log()
