@@ -97,7 +97,7 @@ if __name__ =="__main__":
     try:
       etl_brawler()
     except Exception as e:
-      print(f"ETL Failed at {dt.now()}. {e}")
+      print(f"ETL failed at {dt.now()}. {e}")
     finally:
       print(f"ETL finished at {dt.now()}")
 
