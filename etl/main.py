@@ -13,7 +13,7 @@ from transform import (transform_brawl_data_api, generate_starpower_changes,
                        generate_brawler_changes, add_brawler_changes_version,
                        transform_player_data_api, transform_battle_log_api,
                        transform_event_data_api, generate_event_changes)
-from load import (insert_brawler_db, insert_starpower_db, insert_gadget_db,
+from load import (insert_brawler_db, insert_gadget_db,
                   insert_event_db)
 
 

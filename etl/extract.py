@@ -200,11 +200,11 @@ def get_brawler_latest_version_id(db_connection: Connection, brawler_id: int) ->
     return brawler_latest_version
 
 
-def get_most_recent_battle_log_time(db_connection: connection, player_tag: str):
+def get_most_recent_battle_log_time(db_connection: Connection, player_tag: str):
     """Returns most recent battle log time for a 
     given player tag from the database"""
 
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+    with db_connection.cursor(factory=Cursor) as cur:
         try:
             cur.execute("""SELECT MAX(battle_time) AS most_recent_battle_time
                         FROM battle
@@ -212,13 +212,13 @@ def get_most_recent_battle_log_time(db_connection: connection, player_tag: str):
                         LIMIT 1;""", [player_tag])
             
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+            raise DatabaseError("Error: Unable to retrieve data from database!") from exc
         else:
             most_recent_battle_log_time = cur.fetchone()
             return most_recent_battle_log_time["most_recent_battle_time"]
             
 
-def get_distinct_battle_types(db_connection: connection) -> list[str]:
+def get_distinct_battle_types(db_connection: Connection) -> list[str]:
     """Returns distinct battle types from the database"""
 
     with db_connection.cursor() as cur:
@@ -227,14 +227,14 @@ def get_distinct_battle_types(db_connection: connection) -> list[str]:
                         FROM battle_type;""")
 
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+            raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
         else:
             battle_types = cur.fetchall()
             return battle_types
 
 
-def get_distinct_event_ids(db_connection: connection) -> list[int]:
+def get_distinct_event_ids(db_connection: Connection) -> list[int]:
     """Returns distinct event ids from the database"""
 
     with db_connection.cursor() as cur:
@@ -243,7 +243,7 @@ def get_distinct_event_ids(db_connection: connection) -> list[int]:
                         FROM bs_event;""")
 
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+            raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
         else:
             bs_event_ids = cur.fetchall()
