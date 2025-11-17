@@ -39,29 +39,29 @@ def etl_brawler():
     brawler_gadget_data_api_df = brawl_api_data_to_df(brawler_data_api, "gadgets")
     event_data_api = transform_event_data_api(event_data_api)
 
-    # Changes/Missing data
+    # Changes
     brawler_changes_df = generate_brawler_changes(brawler_data_database_df, brawler_data_api_df)
     brawler_changes_df = add_brawler_changes_version(conn, brawler_changes_df)
-    event_changes_df = generate_event_changes(event_data_database_df, event_data_api)
-    # Insert brawler updates/new data
-    # This is required as brawler_version is pulled into
-    # other dataframes, so this should be updated first so the most recent version is pulled)
-    insert_brawler_db(conn, brawler_changes_df)
+    # event_changes_df = generate_event_changes(event_data_database_df, event_data_api)
+    # # Insert brawler updates/new data
+    # # This is required as brawler_version is pulled into
+    # # other dataframes, so this should be updated first so the most recent version is pulled)
+    # insert_brawler_db(conn, brawler_changes_df)
 
-    starpower_changes_df = generate_starpower_changes(brawler_starpower_data_database_df,
-                                                    brawler_starpower_data_api_df)
-    starpower_changes_df = add_starpower_changes_version(conn, starpower_changes_df)
+    # starpower_changes_df = generate_starpower_changes(brawler_starpower_data_database_df,
+    #                                                 brawler_starpower_data_api_df)
+    # starpower_changes_df = add_starpower_changes_version(conn, starpower_changes_df)
 
-    gadget_changes_df = generate_gadget_changes(brawler_gadget_data_database_df,
-                                                brawler_gadget_data_api_df)
-    gadget_changes_df = add_gadget_changes_version(conn, gadget_changes_df)
+    # gadget_changes_df = generate_gadget_changes(brawler_gadget_data_database_df,
+    #                                             brawler_gadget_data_api_df)
+    # gadget_changes_df = add_gadget_changes_version(conn, gadget_changes_df)
 
-    # Load
-    insert_starpower_db(conn, starpower_changes_df)
-    insert_gadget_db(conn, gadget_changes_df)
-    insert_event_db(conn, event_changes_df)
+    # ## Load
+    # insert_starpower_db(conn, starpower_changes_df)
+    # insert_gadget_db(conn, gadget_changes_df)
+    # insert_event_db(conn, event_changes_df)
 
-    conn.commit()
+    # conn.commit()
     conn.close()
 
 
