@@ -34,7 +34,7 @@ def insert_brawler_db(db_conn: Connection, brawler_data: DataFrame):
             cur = db_conn.cursor(factory=Cursor)
             cur.execute("""INSERT INTO brawler
                         (brawler_id, brawler_version, brawler_name)
-                        VALUES (%s, %s, %s);""", [brawler["brawler_id"],
+                        VALUES (?, ?, ?);""", [brawler["brawler_id"],
                                                   brawler["brawler_version"] + 1,
                                                   brawler["brawler_name"]])
 
@@ -68,7 +68,7 @@ def insert_new_starpower_data(db_conn: Connection, starpower_data: DataFrame):
             cur = db_conn.cursor(factory=Cursor)
             cur.execute("""INSERT INTO starpower
                         (starpower_id, starpower_version, starpower_name, brawler_id, brawler_version)
-                        VALUES (%s, %s, %s, %s, %s);""",
+                        VALUES (?, ?, ?, ?, ?);""",
                         [starpower["starpower_id"],
                           starpower["starpower_version"] + 1,
                           starpower["starpower_name"],
@@ -79,7 +79,7 @@ def insert_new_starpower_data(db_conn: Connection, starpower_data: DataFrame):
             raise DatabaseError("Error: Unable to insert starpower data!") from exc
 
 
-def insert_gadget_db(db_conn: Connection, gadget_data: DataFrame):
+def insert_new_gadget_data(db_conn: Connection, gadget_data: DataFrame):
     """Insert gadget data into the database"""
 
     if not isinstance(gadget_data, DataFrame):
@@ -92,7 +92,7 @@ def insert_gadget_db(db_conn: Connection, gadget_data: DataFrame):
             cur = db_conn.cursor(factory=Cursor)
             cur.execute("""INSERT INTO gadget
                         (gadget_id, gadget_version, gadget_name, brawler_id, brawler_version)
-                        VALUES (%s, %s, %s, %s, %s);""",
+                        VALUES (?, ?, ?, ?, ?);""",
                         [gadget["gadget_id"],
                           gadget["gadget_version"] + 1,
                           gadget["gadget_name"],
@@ -150,7 +150,7 @@ def insert_battle_log_db(db_conn: Connection, battle_log_data: dict):
             raise DatabaseError("Error: Unable to insert battle log data!") from exc
 
 
-def insert_event_db(db_conn: Connection, event_log_data: DataFrame):
+def insert_new_event_data(db_conn: Connection, event_log_data: DataFrame):
     """Insert event data into the database"""
 
     if not isinstance(event_log_data, DataFrame):
@@ -164,7 +164,7 @@ def insert_event_db(db_conn: Connection, event_log_data: DataFrame):
             cur.execute("""INSERT INTO bs_event
                         (bs_event_id, bs_event_version, mode, map)
                         VALUES
-                        (%s, %s, %s, %s);""",
+                        (?, ?, ?, ?);""",
                         [event["event_id"], event["event_version"],
                           event["mode"], event["map"]])
 

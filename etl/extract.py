@@ -187,7 +187,7 @@ def get_brawler_latest_version_id(db_connection: Connection, brawler_id: int) ->
         cur.execute("""
             SELECT MAX(brawler_version)
             FROM brawler
-            WHERE brawler_id = %s;""",[brawler_id])
+            WHERE brawler_id = ?;""",[brawler_id])
 
         brawler_latest_version = cur.fetchone()[0]
 
@@ -266,7 +266,7 @@ def get_starpower_latest_version_id(db_connection: Connection, starpower_id: int
         cur.execute("""
             SELECT MAX(starpower_version)
             FROM starpower
-            WHERE starpower_id = %s;""",[starpower_id])
+            WHERE starpower_id = ?;""",[starpower_id])
 
         starpower_latest_version_id = cur.fetchone()[0]
 
@@ -289,7 +289,7 @@ def get_gadget_latest_version_id(db_connection: Connection, gadget_id: int) -> i
         cur.execute("""
             SELECT MAX(gadget_version)
             FROM gadget
-            WHERE gadget_id = %s;""", [gadget_id])
+            WHERE gadget_id = ?;""", [gadget_id])
         gadget_latest_version_id = cur.fetchone()[0]
 
     except Exception as exc:
