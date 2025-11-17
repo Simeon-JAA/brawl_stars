@@ -7,12 +7,12 @@ import pandas as pd
 from pandas import DataFrame, concat
 from psycopg2.extensions import connection
 
-from extract import (get_most_recent_starpower_version, get_most_recent_gadget_version,
-                     get_most_recent_brawler_version)
+from extract import (get_starpower_latest_version_id, get_gadget_latest_version_id,
+                     get_brawler_latest_version_id)
 
 
 def brawler_name_value_to_title(brawler_data: dict) -> dict:
-    """Apply title() to all values for the 'name' key"""
+    """Apply title function to all values for the 'name' key"""
 
     if not isinstance(brawler_data, dict):
         raise TypeError("Error: Brawler data is an incorrect type!")
@@ -35,7 +35,7 @@ def brawler_name_value_to_title(brawler_data: dict) -> dict:
 
 
 def to_snake_case(text: str) -> str:
-    """Formats keys to snake_case"""
+    """Format keys to snake_case"""
 
     if not isinstance(text, str):
         raise TypeError("Error: Text should be a string!")
@@ -50,7 +50,7 @@ def to_snake_case(text: str) -> str:
 
 
 def to_title(text: str) -> str:
-    """Formats camelCase test to title"""
+    """Format camelCase text to title"""
 
     if "5v5" in text:
         text = text.replace("5V5", "5v5")
@@ -61,7 +61,7 @@ def to_title(text: str) -> str:
 
 
 def format_datetime(time_api_format: str) -> str:
-    """Formats the datetime object recieved by the brawl stars api"""
+    """Format datetime object received by brawl stars api"""
 
     read_time_format = dt.strptime(time_api_format, "%Y%m%dT%H%M%S.%fZ")
     format_dt = read_time_format.strftime("%Y-%m-%d %H:%M:%S")
@@ -146,7 +146,7 @@ def add_brawler_changes_version(db_connection: connection,
                                 brawler_changes_df: DataFrame) -> DataFrame:
     """Creates new column in dataframe with most recent brawler version"""
 
-    brawler_changes_df["brawler_version"] = brawler_changes_df["brawler_id"].apply(lambda brawler_id: get_most_recent_brawler_version(db_connection, brawler_id))
+    brawler_changes_df["brawler_version"] = brawler_changes_df["brawler_id"].apply(lambda brawler_id: get_brawler_latest_version_id(db_connection, brawler_id))
 
     return brawler_changes_df
 
@@ -155,7 +155,7 @@ def add_starpower_changes_version(db_connection: connection,
                                   starpower_changes_df: DataFrame) -> DataFrame:
     """Creates new column in dataframe with most recent starpower version"""
 
-    starpower_changes_df["starpower_version"] = starpower_changes_df["starpower_id"].apply(lambda sp_id: get_most_recent_starpower_version(db_connection, sp_id))
+    starpower_changes_df["starpower_version"] = starpower_changes_df["starpower_id"].apply(lambda sp_id: get_starpower_latest_version_id(db_connection, sp_id))
     starpower_changes_df = add_brawler_changes_version(db_connection, starpower_changes_df)
     return starpower_changes_df
 
@@ -164,14 +164,15 @@ def add_gadget_changes_version(db_connection: connection,
                                gadget_changes_df: DataFrame) -> DataFrame:
     """Creates new column in dataframe with most recent gadget version"""
 
-    gadget_changes_df["gadget_version"] = gadget_changes_df["gadget_id"].apply(lambda gadget_id: get_most_recent_gadget_version(db_connection, gadget_id))
+    gadget_changes_df["gadget_version"] = gadget_changes_df["gadget_id"].apply(lambda gadget_id: get_gadget_latest_version_id(db_connection, gadget_id))
     gadget_changes_df = add_brawler_changes_version(db_connection, gadget_changes_df)
     return gadget_changes_df
 
 
 def generate_starpower_changes(starpower_db_df: DataFrame,
                                starpower_api_df: DataFrame) -> DataFrame:
-    """Compares data between database and api for starpowers and returns the difference to be inserted"""
+    """Compares starpower data between database and api
+    and returns any differences to be inserted"""
 
     starpower_data_to_load = DataFrame(columns={"brawler_id": [],
                                                 "brawler_name": [],
@@ -257,7 +258,9 @@ def generate_brawler_changes(brawler_db_df: DataFrame,
         api_brawler_data = api_brawler_data.reset_index(drop=True).sort_index(axis=1)
 
         if db_brawler_data.empty:
-            brawler_data_to_load = concat([brawler_data_to_load, api_brawler_data], ignore_index=True)
+            brawler_data_to_load = concat([brawler_data_to_load,
+                                           api_brawler_data],
+                                           ignore_index=True)
 
         else:
             comparison_df = db_brawler_data.compare(other=api_brawler_data,
@@ -267,7 +270,9 @@ def generate_brawler_changes(brawler_db_df: DataFrame,
             differences_df = comparison_df.loc[(comparison_df.xs("databse",axis=1, level=1) != comparison_df.xs("api", axis=1, level=1)).any(axis=1)]
             differences_filtered_df = differences_df.xs("api", axis=1, level=1)
 
-            brawler_data_to_load = concat([brawler_data_to_load, differences_filtered_df], ignore_index=True)
+            brawler_data_to_load = concat([brawler_data_to_load,
+                                           differences_filtered_df],
+                                           ignore_index=True)
 
     return brawler_data_to_load
 
@@ -305,50 +310,113 @@ def get_brawler_played_from_battle_log(battle_teams: list[list[dict]], player_ta
     for team in battle_teams:
         all_teams.extend(team)
 
-    try:
-        for player_data in all_teams:
-            if player_data["tag"] == f"#{player_tag}":
-                return player_data["brawler"]["id"]
+    for player_data in all_teams:
+        if player_data["tag"] == f"{player_tag}":
+            return player_data["brawler"]["id"]
 
-    except Exception as exc:
-        raise ValueError("Error: Player tag not found in battle log!") from exc
+    raise ValueError("Error: Player tag not found in battle log!")
 
 
 def is_star_player(star_player_data: dict, player_tag: str) -> bool:
     """Returns true if star player and false if not"""
 
-    if star_player_data["tag"] is None:
-        return False
+    if star_player_data is None:
+        return None
     if star_player_data["tag"] == f"#{player_tag}":
         return True
     return False
 
 
-#TODO filter on player_tag and time (should not insert the same battle twice)
-#TODO change battle log format to a dataframe for standardised data
-def transform_battle_log_api(battle_log_data: list[dict], player_tag: str) -> pd.DataFrame:
+#TODO complete function (some special events returned from the api return a trophyChange key
+# which is not representative fr in game data)
+# need to look at more data to establish rules for this
+def valid_trophy_change(battle_log_entry: dict) -> bool:
+    """Checks if the 'trophyChange' key exsists and if the key is valid
+    (some special events returned from the api return a trophyChange key
+    which is not representative fr in game data)"""
+
+    if not isinstance(battle_log_entry, dict):
+        raise TypeError("Error: battle log is not a dictionary!")
+    if not battle_log_entry:
+        raise ValueError("Error: battle log is empty!")
+
+    if "trophyChange" not in battle_log_entry["battle"].keys():
+        return False
+
+    return True
+
+
+def normalise_battle(db_connection: connection, battle: dict, player_tag: str) -> dict:
+    """Normalises a single battle log entry to load into a dataframe"""
+
+    battle["player_tag"] = player_tag
+    battle["battle_time"] = format_datetime(battle["battleTime"])
+    del battle["battleTime"]
+
+    battle["event_id"] = battle["event"]["id"]
+    #Insert missing event ids
+    if battle["event_id"] not in get_distinct_event_ids(db_connection):
+        print(battle["event"])
+        # insert_new_event_data(db_connection, battle["event"])
+
+    del battle["event"]
+
+    battle["battle_type"] = to_title(battle["battle"]["type"])
+    battle["result"] = to_title(battle["battle"]["result"])
+    battle["duration"] = battle["battle"]["duration"]
+    if valid_trophy_change(battle):
+        battle["trophy_change"] = battle["battle"]["trophyChange"]
+    else:
+        battle["trophy_change"] = None
+    battle["brawler_played_id"] = get_brawler_played_from_battle_log(battle["battle"]["teams"], player_tag)
+    battle["star_player"] = is_star_player(battle["battle"]["starPlayer"], player_tag)
+    del battle["battle"]
+    return battle
+
+
+def battle_to_df(db_connection: connection, battle: dict, player_tag) -> DataFrame:
+    """Transforms single battle to a dataframe"""
+
+    if not isinstance(battle, dict):
+        raise TypeError("Error: Battle entry is not a dictionary!")
+    if not battle:
+        raise ValueError("Error: Battle entry is empty!")
+
+    battle = normalise_battle(db_connection, battle, player_tag)
+    battle_df = pd.DataFrame(battle, index=[0])
+    return battle_df
+
+
+def transform_battle_log_api(db_connection: connection,
+                             battle_log_data: list[dict],
+                             player_tag: str) -> pd.DataFrame:
     """Transforms player battle log and returns desired values"""
 
-    battle_log = []
+    battle_log_df = pd.DataFrame(columns=["player_tag", "battle_time", "event_id", "result",
+                                       "duration", "battle_type", "trophy_change", "star_player",
+                                       "brawler_played_id"])
+
+    most_recent_battle_log_time = get_most_recent_battle_log_time(db_connection,
+                                                                  player_tag)
+    if most_recent_battle_log_time:
+        battle_log_data = [battle for battle in battle_log_data
+                           if battle["battleTime"] > most_recent_battle_log_time]
 
     for battle in battle_log_data["items"]:
-        battle_to_append = {}
-        battle_to_append["player_tag"] = player_tag
-        battle_to_append["time"] = format_datetime(battle["battleTime"])
-        battle_to_append["event_id"] = battle["event"]["id"]
-        battle_to_append["map"] = battle["event"]["map"].title()
-        battle_to_append["type"] = battle["battle"]["type"].title()
-        battle_to_append["result"] = battle["battle"]["result"].title()
-        battle_to_append["duration"] = battle["battle"]["duration"]
-        if "trophyChange" not in battle["battle"].keys():
-            battle_to_append["trophy_change"] = None
-        else:
-            battle_to_append["trophy_change"] = battle["battle"]["trophyChange"]
-        battle_to_append["brawler_id"] = get_brawler_played_from_battle_log(battle["battle"]["teams"], player_tag)
-        battle_to_append["star_player"] = is_star_player(battle["battle"]["starPlayer"], player_tag)
-        battle_log.append(battle_to_append)
+        #Ignore map maker events
+        if battle["event"]["id"] == 0:
+            continue
 
-    return battle_log
+        battle_df = battle_to_df(db_connection, battle, player_tag)
+        battle_log_df = pd.concat([battle_log_df, battle_df], ignore_index=True)
+    
+    #Insert missing battle types
+    battle_types = battle_log_df["battle_type"].unique()
+    for battle_type in battle_types:
+        if battle_type not in get_distinct_battle_types(db_connection):
+            insert_new_battle_type_data(db_connection, battle_type)
+
+    return battle_log_df
 
 
 if __name__ =="__main__":

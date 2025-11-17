@@ -173,3 +173,9 @@ cython_debug/
 #Playground and mock data
 functions/mock*.py
 functions/mock*.json
+
+#Crontab logs
+crontab_log*.txt
+
+#Database files
+database/*.db

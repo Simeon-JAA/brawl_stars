@@ -1,17 +1,15 @@
 """Extract script to extract data from brawl API and database"""
 
 from os import environ
+import sqlite3
+from sqlite3 import Connection, Cursor, DatabaseError
 
-import psycopg2
 import requests
 import pandas as pd
-from psycopg2.extensions import connection
-from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
 
 ## Non extraction functions
-
 def format_player_tag(player_tag: str) -> str:
     """Formats player tag"""
 
@@ -42,229 +40,265 @@ def check_player_tag(player_tag: str) -> bool:
 
 
 ## Database Extraction
-def get_db_connection(config_env) -> connection:
-    """Establishes connection with the database"""
+def get_db_connection(config_env) -> Connection:
+    """Establishes connection with the sqlite3 database"""
 
     try:
-        db_connection = psycopg2.connect(dbname = config_env["dbname"],
-                         user = config_env["user"],
-                         password = config_env["password"],
-                         host = config_env["host"],
-                         port = config_env["port"]
-        )
+        db_connection = sqlite3.connect(database = config_env["dbpath"],
+                                        timeout = 10)
 
     except Exception as exc:
-        raise psycopg2.DatabaseError("Error: Cannot establish connection to database!") from exc
+        raise DatabaseError("Error: Cannot establish connection to database!") from exc
 
     return db_connection
 
 
-def get_most_recent_brawler_starpowers(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler starpowers from database"""
-
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
-        try:
-            cur.execute("""SELECT DISTINCT b.brawler_id, b.brawler_name,
-                        sp.starpower_id, sp.starpower_version, sp.starpower_name
-                        FROM brawler b
-                        INNER JOIN (SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
-                                    FROM brawler b_2
-                                    GROUP BY b_2.brawler_id) b_max
-                        ON b.brawler_id = b_max.brawler_id 
-                        AND b.brawler_version = b_max.brawler_version
-                        INNER JOIN starpower sp ON b.brawler_id = sp.brawler_id
-                        INNER JOIN (SELECT sp_2.starpower_id, MAX(sp_2.starpower_version) AS starpower_version
-                                    FROM starpower sp_2
-                                    GROUP BY sp_2.starpower_id) sp_max
-                        ON sp.starpower_id = sp_max.starpower_id
-                        AND sp.starpower_version = sp_max.starpower_version
-                        GROUP BY b.brawler_id, b.brawler_version, b.brawler_name,
-                        sp.starpower_id, sp.starpower_version, sp.starpower_name;""")
-
-            most_recent_brawler_data = cur.fetchall()
-
-        except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
-
-    most_recent_brawler_data_df = pd.DataFrame(data=most_recent_brawler_data,
-                                               columns=("brawler_id", "brawler_name",
-                                                        "starpower_id", "starpower_version",
-                                                        "starpower_name"))
-
-    return most_recent_brawler_data_df
+def get_starpowers_latest_version(db_connection: Connection) -> pd.DataFrame:
+    """Get lastest version of all starpowers from database"""
 
 
-def get_most_recent_brawler_gadgets(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler gadgets from database"""
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+           WITH latest_starpowers AS (
+              SELECT 
+                *,
+                ROW_NUMBER() OVER (PARTITION BY starpower_id ORDER BY starpower_version DESC) rn
+                FROM starpower
+            )
+            SELECT 
+              lsp.starpower_id, lsp.starpower_version, lsp.starpower_name,
+                b.brawler_id, b.brawler_name
+            FROM latest_starpowers lsp
+            INNER JOIN brawler b
+            ON lsp.brawler_id = b.brawler_id AND lsp.brawler_version = b.brawler_version
+            WHERE rn = 1
+            ORDER BY lsp.starpower_id;""")
 
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
-        try:
-            cur.execute("""SELECT DISTINCT b.brawler_id, b.brawler_name,
-                        g.gadget_id, g.gadget_version, g.gadget_name
-                        FROM brawler b
-                        INNER JOIN (SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
-                                    FROM brawler b_2
-                                    GROUP BY b_2.brawler_id) b_max
-                        ON b.brawler_id = b_max.brawler_id 
-                        AND b.brawler_version = b_max.brawler_version
-                        INNER JOIN gadget g ON b.brawler_id = g.brawler_id 
-                        INNER JOIN (SELECT g_2.gadget_id, MAX(g_2.gadget_version) AS gadget_version
-                                    FROM gadget g_2
-                                    GROUP BY g_2.gadget_id) g_max
-                        ON g.gadget_id = g_max.gadget_id
-                        AND g.gadget_version = g_max.gadget_version
-                        GROUP BY b.brawler_id, b.brawler_version, b.brawler_name,
-                        g.gadget_id, g.gadget_version, g.gadget_name;""")
+        starpowers_latest_version = cur.fetchall()
 
-            most_recent_brawler_data = cur.fetchall()
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
-        except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+    starpowers_latest_version_df = pd.DataFrame(data=starpowers_latest_version,
+                                                columns=("brawler_id", "brawler_name",
+                                                         "starpower_id", "starpower_version", 
+                                                         "starpower_name"))
 
-    most_recent_brawler_data_df = pd.DataFrame(data=most_recent_brawler_data,
-                                               columns=("brawler_id", "brawler_name",
-                                               "gadget_id", "gadget_version",
-                                               "gadget_name"))
-
-    return most_recent_brawler_data_df
+    return starpowers_latest_version_df
 
 
-def get_most_recent_brawler_version(db_connection: connection, brawler_id: int) -> int:
-    """Returns most recent brawler version"""
+def get_gadgets_latest_version(db_connection: Connection) -> pd.DataFrame:
+    """Get latest version of all gadgets from database"""
+
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+           WITH latest_gadgets AS (
+              SELECT 
+                *,
+                ROW_NUMBER() OVER (PARTITION BY gadget_id ORDER BY gadget_version DESC) rn
+                FROM gadget
+            )
+            SELECT 
+              lg.gadget_id, lg.gadget_version, lg.gadget_name,
+                b.brawler_id, b.brawler_name
+            FROM latest_gadgets lg
+            INNER JOIN brawler b
+            ON lg.brawler_id = b.brawler_id AND lg.brawler_version = b.brawler_version
+            WHERE rn = 1
+            ORDER BY lg.gadget_id;""")
+
+        gadgets_latest_version = cur.fetchall()
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+    gadgets_latest_version_df = pd.DataFrame(data=gadgets_latest_version,
+                                             columns=("brawler_id", "brawler_name",
+                                                      "gadget_id", "gadget_version",
+                                                      "gadget_name"))
+
+    return gadgets_latest_version_df
+
+
+def get_brawlers_latest_version(db_connection: Connection) -> pd.DataFrame:
+    """Get latest version of all brawlers from database"""
+
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+            WITH latest_brawlers AS (
+              SELECT *, ROW_NUMBER() OVER (PARTITION BY brawler_id ORDER BY brawler_version DESC) rn
+              FROM brawler
+            )
+            SELECT lb.brawler_id, lb.brawler_name
+            FROM latest_brawlers lb
+            WHERE rn = 1
+            ORDER BY brawler_id;""")
+
+        brawlers_latest_version = cur.fetchall()
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+    brawlers_latest_version_df = pd.DataFrame(data=brawlers_latest_version,
+                                               columns=("brawler_id", "brawler_name"))
+    return brawlers_latest_version_df
+
+
+def get_events_latest_version(db_connection: Connection) -> pd.DataFrame:
+    """Get latest version of all events from the database"""
+
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+            WITH latest_events AS (
+              SELECT *, ROW_NUMBER() OVER (PARTITION BY bs_event_id ORDER BY bs_event_version DESC) rn
+              FROM bs_event
+            )
+            SELECT le.bs_event_id, le.bs_event_version, le.mode, le.map
+            FROM latest_events le
+            WHERE rn = 1
+            ORDER BY le.bs_event_id;""")
+
+        event_data_latest_version = cur.fetchall()
+
+    except Exception as exc:
+        raise DatabaseError("Error: Cannot retrieve event data from database!") from exc
+
+    event_data_latest_version_df = pd.DataFrame(data=event_data_latest_version,
+                                                columns=("bs_event_id", "bs_event_version",
+                                                         "mode", "map")).rename(columns={
+                                                             "bs_event_id": "event_id",
+                                                             "bs_event_version": "event_version"})
+
+    return event_data_latest_version_df[["event_id", "event_version", "mode", "map"]]
+
+
+def get_brawler_latest_version_id(db_connection: Connection, brawler_id: int) -> int:
+    """Gets latest version ID of a specified brawler"""
 
     if not isinstance(brawler_id, int):
-        raise TypeError("Error: Brawler is is not an integer!")
+        raise TypeError("Error: Brawler ID is not an integer!")
 
     try:
-        with db_connection.cursor() as cur:
-            cur.execute("""SELECT MAX(brawler_version)
-                        FROM brawler
-                        WHERE brawler_id = %s;""",[brawler_id])
-            max_brawler_version = cur.fetchone()[0]
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+            SELECT MAX(brawler_version)
+            FROM brawler
+            WHERE brawler_id = ?;""",[brawler_id])
+
+        brawler_latest_version = cur.fetchone()[0]
 
     except Exception as exc:
-        raise psycopg2.DatabaseError("Error: Unavle to retrieve data from database!") from exc
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
-    if not max_brawler_version:
+    if not brawler_latest_version:
         return 0
-    return max_brawler_version
+
+    return brawler_latest_version
 
 
-def get_most_recent_starpower_version(db_connection: connection, starpower_id: int) -> int:
-    """Returns most recent star power version"""
+def get_most_recent_battle_log_time(db_connection: Connection, player_tag: str):
+    """Returns most recent battle log time for a 
+    given player tag from the database"""
 
-    if not isinstance(starpower_id, int):
-        raise TypeError("Error: Star power is is not an integer!")
-
-    try:
-        with db_connection.cursor() as cur:
-            cur.execute("""SELECT MAX(starpower_version)
-                        FROM starpower
-                        WHERE starpower_id = %s;""",[starpower_id])
-            max_starpower_version = cur.fetchone()[0]
-
-    except Exception as exc:
-        raise psycopg2.DatabaseError("Error: Unavle to retrieve data from database!") from exc
-
-    if not max_starpower_version:
-        return 0
-    return max_starpower_version
-
-
-def get_most_recent_gadget_version(db_connection: connection, gadget_id: int) -> int:
-    """Returns most recent gadget version"""
-
-    if not isinstance(gadget_id, int):
-        raise TypeError("Error: Gadget id is not an integer!")
-
-    try:
-        with db_connection.cursor() as cur:
-            cur.execute("""SELECT MAX(gadget_version)
-                        FROM gadget
-                        WHERE gadget_id = %s;""", [gadget_id])
-            max_gadget_version = cur.fetchone()[0]
-
-    except Exception as exc:
-        raise psycopg2.DatabaseError("Error: Unavle to retrieve data from database!") from exc
-
-    if not max_gadget_version:
-        return 0
-    return max_gadget_version
-
-
-def get_most_recent_brawler_data(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent brawler data from database"""
-
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+    with db_connection.cursor(factory=Cursor) as cur:
         try:
-            cur.execute("""SELECT DISTINCT b.brawler_id, b.brawler_name
-                        FROM brawler b
-                        INNER JOIN (SELECT b_2.brawler_id, MAX(b_2.brawler_version) AS brawler_version
-                                    FROM brawler b_2
-                                    GROUP BY b_2.brawler_id) b_max
-                        ON b.brawler_id = b_max.brawler_id 
-                        AND b.brawler_version = b_max.brawler_version
-                        GROUP BY b.brawler_id, b.brawler_version, b.brawler_name;""")
+            cur.execute("""SELECT MAX(battle_time) AS most_recent_battle_time
+                        FROM battle
+                        WHERE player_tag = %s
+                        LIMIT 1;""", [player_tag])
+            
+        except Exception as exc:
+            raise DatabaseError("Error: Unable to retrieve data from database!") from exc
+        else:
+            most_recent_battle_log_time = cur.fetchone()
+            return most_recent_battle_log_time["most_recent_battle_time"]
+            
 
-            most_recent_brawler_data = cur.fetchall()
+def get_distinct_battle_types(db_connection: Connection) -> list[str]:
+    """Returns distinct battle types from the database"""
+
+    with db_connection.cursor() as cur:
+        try:
+            cur.execute("""SELECT DISTINCT battle_type_name
+                        FROM battle_type;""")
 
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Unable to retrieve data from database!") from exc
+            raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
-    most_recent_brawler_data_df = pd.DataFrame(data=most_recent_brawler_data,
-                                               columns=("brawler_id", "brawler_name"))
-    return most_recent_brawler_data_df
+        else:
+            battle_types = cur.fetchall()
+            return battle_types
 
 
-def get_most_recent_event_data(db_connection: connection) -> pd.DataFrame:
-    """Returns most recent event data from database"""
+def get_distinct_event_ids(db_connection: Connection) -> list[int]:
+    """Returns distinct event ids from the database"""
 
-    with db_connection.cursor(cursor_factory=RealDictCursor) as cur:
+    with db_connection.cursor() as cur:
         try:
-            cur.execute("""SELECT e.bs_event_id, e.bs_event_version, e.mode, e.map
-                        FROM bs_event e
-                        INNER JOIN (
-                            SELECT e2.bs_event_id, MAX(e2.bs_event_version) AS bs_event_version
-                            FROM bs_event e2
-                            GROUP BY e2.bs_event_id) e_max
-                        ON e.bs_event_id = e_max.bs_event_id
-                        AND e.bs_event_version = e_max.bs_event_version
-                        GROUP BY e.bs_event_id, e.bs_event_version, e.mode, e.map;""")
-
-            event_data = cur.fetchall()
+            cur.execute("""SELECT DISTINCT bs_event_id
+                        FROM bs_event;""")
 
         except Exception as exc:
-            raise psycopg2.DatabaseError("Error: Cannot get event data from database!") from exc
+            raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
-    event_data_df = pd.DataFrame(data=event_data,
-                                 columns=("bs_event_id",
-                                          "bs_event_version",
-                                          "mode",
-                                          "map")).rename(columns={
-        "bs_event_id": "event_id",
-        "bs_event_version": "event_version"})
-
-    return event_data_df[["event_id", "event_version", "mode", "map"]]
+        else:
+            bs_event_ids = cur.fetchall()
+            return bs_event_ids
 
 
 def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
+    
+    return
 
-    db_connection = get_db_connection(config_env)
+def get_starpower_latest_version_id(db_connection: Connection, starpower_id: int) -> int:
+    """Get latest version ID of specified starpower"""
 
-    most_recent_brawler_data_database = get_most_recent_brawler_data(db_connection)
+    if not isinstance(starpower_id, int):
+        raise TypeError("Error: StarpowerID is not an integer!")
 
-    return most_recent_brawler_data_database
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+            SELECT MAX(starpower_version)
+            FROM starpower
+            WHERE starpower_id = ?;""",[starpower_id])
+
+        starpower_latest_version_id = cur.fetchone()[0]
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+    if not starpower_latest_version_id:
+        return 0
+    return starpower_latest_version_id
 
 
-def extract_event_data_database(config_env) -> pd.DataFrame:
-    """Extracts event data from database"""
+def get_gadget_latest_version_id(db_connection: Connection, gadget_id: int) -> int:
+    """Get latest version ID of a specified gadget"""
 
-    db_connection = get_db_connection(config_env)
+    if not isinstance(gadget_id, int):
+        raise TypeError("Error: Gadget ID is not an integer!")
 
-    event_data_database = get_most_recent_event_data(db_connection)
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+            SELECT MAX(gadget_version)
+            FROM gadget
+            WHERE gadget_id = ?;""", [gadget_id])
+        gadget_latest_version_id = cur.fetchone()[0]
 
-    return event_data_database
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+    if not gadget_latest_version_id:
+        return 0
+
+    return gadget_latest_version_id
 
 
 ## API Extraction
@@ -272,7 +306,7 @@ def get_api_header(api_token: str) -> dict:
     """Returns api header data"""
 
     header = {
-        # "Accept": "application/json",
+        "Accept": "application/json",
         "Authorization": f"Bearer {api_token}"
     }
 
@@ -396,11 +430,21 @@ if __name__ =="__main__":
 
     config = environ
 
+    conn = get_db_connection(config)
+
+    # Extract - Brawler data database
+    brawlers_db_df = get_brawlers_latest_version(conn)
+    starpowers_db_df = get_starpowers_latest_version(conn)
+    gadgets_db_df = get_gadgets_latest_version(conn)
+    events_db_df = get_events_latest_version(conn)
+
+    # Extract - Brawler data api
     api_header = get_api_header(config["api_token"])
     bs_player_tag  = config["player_tag"]
 
-    brawler_data_database = extract_brawler_data_database(config)
     brawler_data_api = extract_brawler_data_api(config)
 
     player_data = get_api_player_data(api_header, bs_player_tag)
     player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
+
+    conn.close()
