@@ -26,10 +26,10 @@ def mock_event_api_dataframe():
 
 
 @pytest.fixture
-def mock_brawl_api_data():
-    """Return mock brawler api object"""
+def mock_player_data_api():
+    """Return mock player api object"""
 
-    brawl_data_api = {
+    player_data_api = {
         "tag": "mock_tag",
         "name": "mock_name",
         "trophies": 123,
@@ -43,4 +43,25 @@ def mock_brawl_api_data():
         "bestRoboRumbleTime": 400
     }
 
-    return brawl_data_api
+    return player_data_api
+
+
+@pytest.fixture
+def mock_player_data_db():
+    """Return mock player db response"""
+
+    player_data_db = {
+        "tag": "mock_tag",
+        "name": "mock_name",
+        "trophies": 123,
+        "highestTrophies": 200,
+        "expLevel": 5000,
+        "expPoints": 50000,
+        "isQualifiedFromChampionshipChallenge": True,
+        "3vs3Victories": 1000,
+        "soloVictories": 0,
+        "duoVictories": 0,
+        "bestRoboRumbleTime": 400
+    }
+
+    return player_data_db
