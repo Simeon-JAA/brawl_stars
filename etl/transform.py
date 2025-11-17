@@ -7,16 +7,12 @@ import pandas as pd
 from pandas import DataFrame, concat
 from psycopg2.extensions import connection
 
-from extract import (get_most_recent_starpower_version, get_most_recent_gadget_version,
-                     get_most_recent_brawler_version, get_most_recent_battle_log_time,
-                     get_distinct_battle_types, get_distinct_event_ids)
-from load import (insert_new_battle_type_data, insert_new_event_data)
+from extract import (get_starpower_latest_version_id, get_gadget_latest_version_id,
+                     get_brawler_latest_version_id)
 
 
 def brawler_name_value_to_title(brawler_data: dict) -> dict:
-    """Apply title() to all values for the 'name' key
-    Function used for transforming brawler data receieved
-    from the API"""
+    """Apply title function to all values for the 'name' key"""
 
     if not isinstance(brawler_data, dict):
         raise TypeError("Error: Brawler data is an incorrect type!")
@@ -39,7 +35,7 @@ def brawler_name_value_to_title(brawler_data: dict) -> dict:
 
 
 def to_snake_case(text: str) -> str:
-    """Formats keys to snake_case"""
+    """Format keys to snake_case"""
 
     if not isinstance(text, str):
         raise TypeError("Error: Text should be a string!")
@@ -54,7 +50,7 @@ def to_snake_case(text: str) -> str:
 
 
 def to_title(text: str) -> str:
-    """Formats camelCase test to title"""
+    """Format camelCase text to title"""
 
     if "5v5" in text:
         text = text.replace("5V5", "5v5")
@@ -65,7 +61,7 @@ def to_title(text: str) -> str:
 
 
 def format_datetime(time_api_format: str) -> str:
-    """Formats the datetime object recieved by the brawl stars api"""
+    """Format datetime object received by brawl stars api"""
 
     read_time_format = dt.strptime(time_api_format, "%Y%m%dT%H%M%S.%fZ")
     format_dt = read_time_format.strftime("%Y-%m-%d %H:%M:%S")
@@ -150,7 +146,7 @@ def add_brawler_changes_version(db_connection: connection,
                                 brawler_changes_df: DataFrame) -> DataFrame:
     """Creates new column in dataframe with most recent brawler version"""
 
-    brawler_changes_df["brawler_version"] = brawler_changes_df["brawler_id"].apply(lambda brawler_id: get_most_recent_brawler_version(db_connection, brawler_id))
+    brawler_changes_df["brawler_version"] = brawler_changes_df["brawler_id"].apply(lambda brawler_id: get_brawler_latest_version_id(db_connection, brawler_id))
 
     return brawler_changes_df
 
@@ -159,7 +155,7 @@ def add_starpower_changes_version(db_connection: connection,
                                   starpower_changes_df: DataFrame) -> DataFrame:
     """Creates new column in dataframe with most recent starpower version"""
 
-    starpower_changes_df["starpower_version"] = starpower_changes_df["starpower_id"].apply(lambda sp_id: get_most_recent_starpower_version(db_connection, sp_id))
+    starpower_changes_df["starpower_version"] = starpower_changes_df["starpower_id"].apply(lambda sp_id: get_starpower_latest_version_id(db_connection, sp_id))
     starpower_changes_df = add_brawler_changes_version(db_connection, starpower_changes_df)
     return starpower_changes_df
 
@@ -168,7 +164,7 @@ def add_gadget_changes_version(db_connection: connection,
                                gadget_changes_df: DataFrame) -> DataFrame:
     """Creates new column in dataframe with most recent gadget version"""
 
-    gadget_changes_df["gadget_version"] = gadget_changes_df["gadget_id"].apply(lambda gadget_id: get_most_recent_gadget_version(db_connection, gadget_id))
+    gadget_changes_df["gadget_version"] = gadget_changes_df["gadget_id"].apply(lambda gadget_id: get_gadget_latest_version_id(db_connection, gadget_id))
     gadget_changes_df = add_brawler_changes_version(db_connection, gadget_changes_df)
     return gadget_changes_df
 
