@@ -1,9 +1,10 @@
-"""Main pipeline file to ru full etl on brawler data into the database"""
+"""Main.py will on a schedule and will run ETLs"""
 
 from os import environ
-from dotenv import load_dotenv
-
+from sqlite3 import Connection, Cursor, DatabaseError
 from datetime import datetime as dt
+
+from dotenv import load_dotenv
 
 from extract import (extract_brawler_data_api, get_brawlers_latest_version,
                      get_gadgets_latest_version, get_starpowers_latest_version,
@@ -17,6 +18,26 @@ from transform import (transform_brawl_data_api, generate_starpower_changes,
                        transform_event_data_api, generate_event_changes)
 from load import (insert_brawler_db, insert_new_starpower_data, insert_new_gadget_data,
                   insert_new_event_data)
+
+
+def get_process_id(conn: Connection, process_name: str) -> int:
+    """Get process ID from database"""
+
+    cur = conn.cursor(factory = Cursor)
+
+    try:
+        cur.execute(
+            """SELECT process_id
+            FROM process 
+            WHERE process_name = ?;""", (process_name))
+
+        process_id = cur.fetchone()
+
+        if process_id:
+            return process_id[0]
+
+    except Exception as e:
+        raise DatabaseError (f"Database error occurred: {e}") from e
 
 
 def etl_brawler():
@@ -33,7 +54,7 @@ def etl_brawler():
     event_data_database_df = get_events_latest_version(conn)
     brawler_data_api = extract_brawler_data_api(config)
     event_data_api = extract_event_data_api(config)
-  
+
     # Transform
     brawler_data_api = transform_brawl_data_api(brawler_data_api)
     brawler_data_api_df = brawl_api_data_to_df(brawler_data_api)
@@ -92,13 +113,13 @@ def etl_battle_log():
 
 
 if __name__ =="__main__":
-    
+
     print(f"ETL started at {dt.now()}")
     try:
-      etl_brawler()
+        etl_brawler()
     except Exception as e:
-      print(f"ETL failed at {dt.now()}. {e}")
+        print(f"ETL failed at {dt.now()}. {e}")
     finally:
-      print(f"ETL finished at {dt.now()}")
+        print(f"ETL finished at {dt.now()}")
 
     # etl_battle_log()
