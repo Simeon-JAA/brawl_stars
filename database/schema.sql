@@ -45,41 +45,33 @@ CREATE TABLE gear (
 
 DROP TABLE IF EXISTS player;
 CREATE TABLE player (
-  player_id INT NOT NULL,
+  player_id INTEGER NOT NULL,
   player_tag VARCHAR(50) UNIQUE NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
-  PRIMARY KEY (player_id)
-);
-
-DROP TABLE IF EXISTS player_name;  
-CREATE TABLE player_name (
-  id INTEGER,
-  player_id INT  NOT NULL,
   player_name TEXT NOT NULL,
-  player_name_version INTEGER NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
-  PRIMARY KEY (id),
-  FOREIGN KEY (player_id) references player (player_id)
+  last_updated TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (player_id)
 );
 
 DROP TABLE IF EXISTS player_exp;
 CREATE TABLE player_exp (
-id INTEGER,
-player_id INT  NOT NULL,
+player_exp_id INTEGER,
+player_id INTEGER NOT NULL,
 exp_level INTEGER NOT NULL,
 exp_points INTEGER NOT NULL,
-PRIMARY KEY (id),
+created_at TEXT DEFAULT (datetime('now')),
+PRIMARY KEY (player_exp_id),
 FOREIGN KEY (player_id) references player (player_id)
 );
 
 DROP TABLE IF EXISTS player_tropies;
 CREATE TABLE player_tropies (
-  id INTEGER,
-  player_id INT  NOT NULL,
+  player_trophies_id INTEGER NOT NULL,
+  player_id INTEGER NOT NULL,
   trophies INTEGER NOT NULL,
   highest_trophies INTEGER NOT NULL,
-  last_updated TEXT DEFAULT (datetime('now')),
-  PRIMARY KEY (id),
+  created_at TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (player_trophies_id),
   FOREIGN KEY (player_id) references player (player_id)
 );
 
@@ -93,7 +85,29 @@ CREATE TABLE bs_event (
   PRIMARY KEY (bs_event_id, bs_event_version)
 );
 
--- DROP TABLE IF EXISTS battle_type CASCADE;
+
+DROP TABLE IF EXISTS process;
+CREATE TABLE process (
+  process_id INTEGER NOT NULL,
+  process_name TEXT NOT NULL,
+  PRIMARY KEY (process_id)
+);
+
+INSERT INTO process (process_id, process_name) VALUES
+(1, 'Brawler ETL'),
+(2, 'Player ETL');
+
+DROP TABLE IF EXISTS process_log;
+CREATE TABLE process_log (
+  process_log_id INTEGER NOT NULL,
+  process_status_id TEXT NOT NULL,
+  started_at TEXT DEFAULT (datetime('now')),
+  completed_at TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (process_log_id),
+  FOREIGN KEY (process_status_id) REFERENCES process (process_id)
+);
+
+-- DROP TABLE IF EXISTS battle_type;
 -- CREATE TABLE battle_type (
 --   battle_type_id SMALLINT GENERATED ALWAYS AS IDENTITY,
 --   battle_type_name TEXT NOT NULL,
@@ -101,9 +115,9 @@ CREATE TABLE bs_event (
 --   PRIMARY KEY (battle_type_id)
 -- ); 
 
--- DROP TABLE IF EXISTS battle CASCADE;
+-- DROP TABLE IF EXISTS battle;
 -- CREATE TABLE battle (
---   id INT GENERATED ALWAYS AS IDENTITY,
+--   battle_id INT TEXT NOT NULL,
 --   player_tag VARCHAR(50) NOT NULL,
 --   battle_time TIMESTAMPTZ,
 --   bs_event_id INT NOT NULL,
@@ -111,7 +125,7 @@ CREATE TABLE bs_event (
 --   result TEXT NOT NULL,
 --   duration INTEGER NOT NULL,
 --   trophy_change INTEGER, 
---   brawler_played_id INTGER NOT NULL,
+--   brawler_id INTEGER NOT NULL,
 --   star_player boolean,
 --   PRIMARY KEY (id),
 --   FOREIGN KEY (bs_event_id) REFERENCES bs_event (bs_event_id),
