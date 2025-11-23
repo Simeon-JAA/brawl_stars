@@ -29,8 +29,7 @@ def get_process_id(conn: Connection, process_name: str) -> int:
         cur.execute(
             """SELECT process_id
             FROM process 
-            WHERE process_name = ?;""", (process_name))
-
+            WHERE process_name = ?;""", [process_name])
         process_id = cur.fetchone()
 
         if process_id:
@@ -40,12 +39,36 @@ def get_process_id(conn: Connection, process_name: str) -> int:
         raise DatabaseError (f"Database error occurred: {e}") from e
 
 
+def update_process_log(conn: Connection, process_id: int, process_status: str) -> None:
+    """Update process log in database"""
+
+    cur = conn.cursor(factory = Cursor)
+
+    try:
+        cur.execute(
+            """INSERT INTO process_log
+            (process_id, process_status)
+            VALUES (?, ?);""",
+            [process_id, process_status]
+        )
+        
+        conn.commit()
+
+    except DatabaseError as e:
+        raise DatabaseError (f"Database error occurred: {e}") from e
+
+
 def etl_brawler():
     """ETL for brawler data"""
 
     load_dotenv()
     config = environ
     conn = get_db_connection(config)
+
+    #Update Process Log - Start
+    process_id = get_process_id(conn, "Brawler ETL")
+    update_process_log(conn, process_id, "Start")
+    conn.commit()
 
     # Extract - Brawler data
     brawler_data_database_df = get_brawlers_latest_version(conn)
@@ -83,6 +106,9 @@ def etl_brawler():
     insert_new_starpower_data(conn, starpower_changes_df)
     insert_new_gadget_data(conn, gadget_changes_df)
     insert_new_event_data(conn, event_changes_df)
+
+    #Update Process Log - End
+    update_process_log(conn, process_id, "End")
 
     conn.commit()
     conn.close()
