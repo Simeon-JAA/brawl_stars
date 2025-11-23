@@ -29,8 +29,7 @@ def get_process_id(conn: Connection, process_name: str) -> int:
         cur.execute(
             """SELECT process_id
             FROM process 
-            WHERE process_name = ?;""", (process_name))
-
+            WHERE process_name = ?;""", [process_name])
         process_id = cur.fetchone()
 
         if process_id:
@@ -40,12 +39,54 @@ def get_process_id(conn: Connection, process_name: str) -> int:
         raise DatabaseError (f"Database error occurred: {e}") from e
 
 
-def etl_brawler():
+def update_process_log(conn: Connection, process_id: int, process_status: str) -> None:
+    """Update process log in database"""
+
+    cur = conn.cursor(factory = Cursor)
+
+    try:
+        cur.execute(
+            """INSERT INTO process_log
+            (process_id, process_status)
+            VALUES (?, ?);""",
+            [process_id, process_status]
+        )
+
+        conn.commit()
+
+    except DatabaseError as e:
+        raise DatabaseError (f"Database error occurred: {e}") from e
+
+
+def get_last_process_id_run(conn: Connection, process_id: int) -> dt:
+    """Get last run time of a process from database"""
+
+    cur = conn.cursor(factory = Cursor)
+
+    try:
+        cur.execute(
+            """SELECT last_updated
+            FROM process_log
+            WHERE process_id = ?
+            ORDER BY last_updated DESC
+            LIMIT 1;""", [process_id])
+
+        last_run = cur.fetchone()
+
+        if last_run:
+            return dt.fromisoformat(last_run[0])
+
+    except Exception as e:
+        raise DatabaseError (f"Database error occurred: {e}") from e
+
+
+def etl_brawler(conn: Connection, config: dict):
     """ETL for brawler data"""
 
-    load_dotenv()
-    config = environ
-    conn = get_db_connection(config)
+    #Update Process Log - Start
+    process_id = get_process_id(conn, "Brawler ETL")
+    update_process_log(conn, process_id, "Start")
+    conn.commit()
 
     # Extract - Brawler data
     brawler_data_database_df = get_brawlers_latest_version(conn)
@@ -84,26 +125,35 @@ def etl_brawler():
     insert_new_gadget_data(conn, gadget_changes_df)
     insert_new_event_data(conn, event_changes_df)
 
+    #Update Process Log - End
+    update_process_log(conn, process_id, "End")
+
     conn.commit()
-    conn.close()
 
 
-def etl_player():
+def run_etl(last_run: dt, threshold_mins: int) -> bool:
+    """Run ETL if last run was more than threshold"""
+
+    if last_run is None:
+        return True
+
+    time_diff = int((dt.now() - last_run).total_seconds()/60)
+
+    return True if time_diff >= threshold_mins else False
+
+
+def etl_player(conn: Connection, config: dict):
     """ETL for player data"""
 
-    load_dotenv()
-    config = environ
     bs_player_tag = config["player_tag"]
 
-    player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
-    player_data_api = transform_player_data_api(player_data_api)
+    # player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
+    # player_data_api = transform_player_data_api(player_data_api)
 
 
-def etl_battle_log():
+def etl_battle_log(conn: Connection, config: dict):
     """ETL for player battle log"""
 
-    load_dotenv()
-    config = environ
     bs_player_tag = config["player_tag"]
 
     player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
@@ -114,12 +164,26 @@ def etl_battle_log():
 
 if __name__ =="__main__":
 
-    print(f"ETL started at {dt.now()}")
+    load_dotenv()
+
+    config = environ
+
     try:
-        etl_brawler()
-    except Exception as e:
-        print(f"ETL failed at {dt.now()}. {e}")
-    finally:
-        print(f"ETL finished at {dt.now()}")
+        db_conn = get_db_connection(config)
+        brawl_process_id = get_process_id(db_conn, "Brawler ETL")
+        latest_brawler_etl = get_last_process_id_run(db_conn, brawl_process_id)
+
+    except DatabaseError as e:
+        raise DatabaseError(f"Database connection failed: {e}") from e
+
+    if run_etl(latest_brawler_etl, 60):
+        try:
+            etl_brawler(db_conn, config)
+        except Exception as e:
+            raise ChildProcessError(f"ETL failed at {dt.now()}. {e}") from e
+    else:
+        print(f"ETL skipped at {dt.now()}. Last run was at {latest_brawler_etl}")
+    # finally:
+    #     print(f"ETL finished at {dt.now()}")
 
     # etl_battle_log()
