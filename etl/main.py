@@ -51,7 +51,7 @@ def update_process_log(conn: Connection, process_id: int, process_status: str) -
             VALUES (?, ?);""",
             [process_id, process_status]
         )
-        
+
         conn.commit()
 
     except DatabaseError as e:
@@ -70,7 +70,7 @@ def get_last_process_id_run(conn: Connection, process_id: int) -> dt:
             WHERE process_id = ?
             ORDER BY last_updated DESC
             LIMIT 1;""", [process_id])
-        
+
         last_run = cur.fetchone()
 
         if last_run:
@@ -80,9 +80,8 @@ def get_last_process_id_run(conn: Connection, process_id: int) -> dt:
         raise DatabaseError (f"Database error occurred: {e}") from e
 
 
-def etl_brawler(conn: Connection):
+def etl_brawler(conn: Connection, config: dict):
     """ETL for brawler data"""
-
 
     #Update Process Log - Start
     process_id = get_process_id(conn, "Brawler ETL")
@@ -132,33 +131,29 @@ def etl_brawler(conn: Connection):
     conn.commit()
 
 
-def run_etl(last_run: dt, threshold_mins: int) -> bool:  
+def run_etl(last_run: dt, threshold_mins: int) -> bool:
     """Run ETL if last run was more than threshold"""
 
     if last_run is None:
         return True
 
     time_diff = int((dt.now() - last_run).total_seconds()/60)
-    
+
     return True if time_diff >= threshold_mins else False
 
 
-def etl_player():
+def etl_player(conn: Connection, config: dict):
     """ETL for player data"""
 
-    load_dotenv()
-    config = environ
     bs_player_tag = config["player_tag"]
 
-    player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
-    player_data_api = transform_player_data_api(player_data_api)
+    # player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
+    # player_data_api = transform_player_data_api(player_data_api)
 
 
-def etl_battle_log():
+def etl_battle_log(conn: Connection, config: dict):
     """ETL for player battle log"""
 
-    load_dotenv()
-    config = environ
     bs_player_tag = config["player_tag"]
 
     player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
@@ -168,22 +163,22 @@ def etl_battle_log():
 
 
 if __name__ =="__main__":
-    
+
     load_dotenv()
 
     config = environ
 
     try:
-        conn = get_db_connection(config)
-        brawl_process_id = get_process_id(conn, "Brawler ETL")
-        latest_brawler_etl = get_last_process_id_run(conn, brawl_process_id)
+        db_conn = get_db_connection(config)
+        brawl_process_id = get_process_id(db_conn, "Brawler ETL")
+        latest_brawler_etl = get_last_process_id_run(db_conn, brawl_process_id)
 
     except DatabaseError as e:
         raise DatabaseError(f"Database connection failed: {e}") from e
 
     if run_etl(latest_brawler_etl, 60):
         try:
-            etl_brawler(conn)
+            etl_brawler(db_conn, config)
         except Exception as e:
             raise ChildProcessError(f"ETL failed at {dt.now()}. {e}") from e
     else:
