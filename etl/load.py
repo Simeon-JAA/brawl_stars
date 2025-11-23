@@ -158,9 +158,10 @@ def insert_new_event_data(db_conn: Connection, event_log_data: DataFrame):
     if event_log_data.empty:
         return
 
-    for index, event in event_log_data.iterrows():
-        try:
-            cur = db_conn.cursor(factory=Cursor)
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+        
+        for index, event in event_log_data.iterrows():
             cur.execute("""INSERT INTO bs_event
                         (bs_event_id, bs_event_version, mode, map)
                         VALUES
@@ -168,8 +169,8 @@ def insert_new_event_data(db_conn: Connection, event_log_data: DataFrame):
                         [event["event_id"], event["event_version"],
                           event["mode"], event["map"]])
 
-        except Exception as exc:
-            raise DatabaseError("Error inserting event data into database!") from exc
+    except Exception as exc:
+        raise DatabaseError("Error inserting event data into database!") from exc
 
 
 if __name__ =="__main__":
