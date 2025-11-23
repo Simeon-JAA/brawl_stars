@@ -100,11 +100,11 @@ INSERT INTO process (process_id, process_name) VALUES
 DROP TABLE IF EXISTS process_log;
 CREATE TABLE process_log (
   process_log_id INTEGER NOT NULL,
-  process_status_id TEXT NOT NULL,
-  started_at TEXT DEFAULT (datetime('now')),
-  completed_at TEXT DEFAULT (datetime('now')),
+  process_id TEXT NOT NULL,
+  process_status TEXT NOT NULL,
+  last_updated TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (process_log_id),
-  FOREIGN KEY (process_status_id) REFERENCES process (process_id)
+  FOREIGN KEY (process_id) REFERENCES process (process_id)
 );
 
 -- DROP TABLE IF EXISTS battle_type;
