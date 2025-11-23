@@ -134,9 +134,10 @@ def insert_player_name_db(db_conn: Connection, player_data: dict):
 def insert_battle_log_db(db_conn: Connection, battle_log_data: dict):
     """Insert battle log data into database"""
 
-    for battle in battle_log_data:
-        try:
-            cur = db_conn.cursor(factory=Cursor)
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+
+        for battle in battle_log_data:
             cur.execute("""INSERT INTO battle
                         (player_tag, battle_time, event_id, result,
                         duration, trophy_change, brawler_played_id, star_player)
@@ -146,8 +147,11 @@ def insert_battle_log_db(db_conn: Connection, battle_log_data: dict):
                           battle["result"], battle["duration"], battle["trophy_change"],
                           battle["brawler_id"], battle["star_player"]])
 
-        except Exception as exc:
-            raise DatabaseError("Error: Unable to insert battle log data!") from exc
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to insert battle log data!") from exc
+    
+    finally:
+        cur.close()
 
 
 def insert_new_event_data(db_conn: Connection, event_log_data: DataFrame):
