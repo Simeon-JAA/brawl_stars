@@ -303,11 +303,8 @@ def get_gadget_latest_version_id(db_connection: Connection, gadget_id: int) -> i
     return gadget_latest_version_id
 
 
-def get_player_id(db_connection: Connection, player_data: str) -> int:
-    """Get player ID from database given a player tag"""
-
-    if not isinstance(player_data, str):
-        raise TypeError("Error: Player tag is not a string!")
+def get_player_id(db_connection: Connection, player_data: dict) -> int:
+    """Get player ID from database given the player data received from the API"""
 
     try:
         cur = db_connection.cursor(factory=Cursor)
