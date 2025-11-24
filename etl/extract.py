@@ -303,6 +303,35 @@ def get_gadget_latest_version_id(db_connection: Connection, gadget_id: int) -> i
     return gadget_latest_version_id
 
 
+def get_player_id(db_connection: Connection, player_data: str) -> int:
+    """Get player ID from database given a player tag"""
+
+    if not isinstance(player_data, str):
+        raise TypeError("Error: Player tag is not a string!")
+
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+            SELECT player_id
+            FROM player
+            WHERE player_tag = ?
+            ORDER BY created_at DESC
+            LIMIT 1;""", [player_data["tag"]])
+
+        player_id = cur.fetchone()
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+    finally:
+        cur.close()
+
+    if not player_id:
+        return 0
+
+    return player_id[0]
+
+
 ## API Extraction
 def get_api_header(api_token: str) -> dict:
     """Returns api header data"""
