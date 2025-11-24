@@ -102,52 +102,59 @@ def etl_brawler(conn: Connection, config_parameters: dict):
     update_process_log(conn, process_id, "Start")
     conn.commit()
 
-    # Extract - Brawler data
-    brawler_data_database_df = get_brawlers_latest_version(conn)
-    brawler_starpower_data_database_df = get_starpowers_latest_version(conn)
-    brawler_gadget_data_database_df = get_gadgets_latest_version(conn)
-    event_data_database_df = get_events_latest_version(conn)
-    brawler_data_api = extract_brawler_data_api(config_parameters)
-    event_data_api = extract_event_data_api(config_parameters)
+    try:
 
-    # Transform
-    brawler_data_api = transform_brawl_data_api(brawler_data_api)
-    brawler_data_api_df = brawl_api_data_to_df(brawler_data_api)
-    brawler_starpower_data_api_df = brawl_api_data_to_df(brawler_data_api, "star_powers")
-    brawler_gadget_data_api_df = brawl_api_data_to_df(brawler_data_api, "gadgets")
-    event_data_api = transform_event_data_api(event_data_api)
+        # Extract - Brawler data
+        brawler_data_database_df = get_brawlers_latest_version(conn)
+        brawler_starpower_data_database_df = get_starpowers_latest_version(conn)
+        brawler_gadget_data_database_df = get_gadgets_latest_version(conn)
+        event_data_database_df = get_events_latest_version(conn)
+        brawler_data_api = extract_brawler_data_api(config_parameters)
+        event_data_api = extract_event_data_api(config_parameters)
 
-    # Changes
-    brawler_changes_df = generate_brawler_changes(brawler_data_database_df, brawler_data_api_df)
-    brawler_changes_df = add_brawler_changes_version(conn, brawler_changes_df)
-    event_changes_df = generate_event_changes(event_data_database_df, event_data_api)
-    # Insert brawler updates/new data
-    # This is required as brawler_version is pulled into
-    # other dataframes, so this should be updated first so the most recent version is pulled)
-    insert_brawler_db(conn, brawler_changes_df)
+        # Transform
+        brawler_data_api = transform_brawl_data_api(brawler_data_api)
+        brawler_data_api_df = brawl_api_data_to_df(brawler_data_api)
+        brawler_starpower_data_api_df = brawl_api_data_to_df(brawler_data_api, "star_powers")
+        brawler_gadget_data_api_df = brawl_api_data_to_df(brawler_data_api, "gadgets")
+        event_data_api = transform_event_data_api(event_data_api)
 
-    starpower_changes_df = generate_starpower_changes(brawler_starpower_data_database_df,
-                                                    brawler_starpower_data_api_df)
-    starpower_changes_df = add_starpower_changes_version(conn, starpower_changes_df)
+        # Changes
+        brawler_changes_df = generate_brawler_changes(brawler_data_database_df, brawler_data_api_df)
+        brawler_changes_df = add_brawler_changes_version(conn, brawler_changes_df)
+        event_changes_df = generate_event_changes(event_data_database_df, event_data_api)
+        # Insert brawler updates/new data
+        # This is required as brawler_version is pulled into
+        # other dataframes, so this should be updated first so the most recent version is pulled)
+        insert_brawler_db(conn, brawler_changes_df)
 
-    gadget_changes_df = generate_gadget_changes(brawler_gadget_data_database_df,
-                                                brawler_gadget_data_api_df)
-    gadget_changes_df = add_gadget_changes_version(conn, gadget_changes_df)
+        starpower_changes_df = generate_starpower_changes(brawler_starpower_data_database_df,
+                                                        brawler_starpower_data_api_df)
+        starpower_changes_df = add_starpower_changes_version(conn, starpower_changes_df)
 
-    # Load
-    insert_new_starpower_data(conn, starpower_changes_df)
-    insert_new_gadget_data(conn, gadget_changes_df)
-    insert_new_event_data(conn, event_changes_df)
+        gadget_changes_df = generate_gadget_changes(brawler_gadget_data_database_df,
+                                                    brawler_gadget_data_api_df)
+        gadget_changes_df = add_gadget_changes_version(conn, gadget_changes_df)
 
-    #Update Process Log - End
-    update_process_log(conn, process_id, "End")
+        # Load
+        insert_new_starpower_data(conn, starpower_changes_df)
+        insert_new_gadget_data(conn, gadget_changes_df)
+        insert_new_event_data(conn, event_changes_df)
 
-    conn.commit()
+        #Update Process Log - End
+        update_process_log(conn, process_id, "End")
+
+    except Exception as exc:
+        conn.rollback()
+        update_process_log(conn, process_id, "Failed")
+        raise ChildProcessError("Error within Brawler ETL process!") from exc
+
+    finally:
+        conn.commit()
 
 
 def etl_player(conn: Connection, config_parameters: dict):
     """ETL for player data"""
-
 
     #Update Process Log - Start
     process_id = get_process_id(conn, "Player ETL")
@@ -158,24 +165,32 @@ def etl_player(conn: Connection, config_parameters: dict):
     bs_player_tag = config_parameters["player_tag"]
     api_token = config_parameters["api_token"]
 
-    #Extract
-    player_data_api = get_api_player_data(api_token, bs_player_tag)
-    player_id = get_player_id(conn, player_data_api)
+    try:
+        #Extract
+        player_data_api = get_api_player_data(api_token, bs_player_tag)
+        player_id = get_player_id(conn, player_data_api)
 
-    #Transform
-    player_data_api = transform_player_data_api(player_data_api)
+        #Transform
+        player_data_api = transform_player_data_api(player_data_api)
 
-    #Load
-    if player_id == 0:
-        insert_new_player_db(conn, player_data_api)
+        #Load
+        if player_id == 0:
+            insert_new_player_db(conn, player_data_api)
 
-    insert_player_exp(conn, player_id, player_data_api)
-    insert_player_trophies(conn, player_id, player_data_api)
-    insert_player_victories(conn, player_id, player_data_api)
+        insert_player_exp(conn, player_id, player_data_api)
+        insert_player_trophies(conn, player_id, player_data_api)
+        insert_player_victories(conn, player_id, player_data_api)
 
-    #Update Process Log - End
-    update_process_log(conn, process_id, "End")
-    conn.commit()
+        #Update Process Log - End
+        update_process_log(conn, process_id, "End")
+
+    except Exception as exc:
+        conn.rollback()
+        update_process_log(conn, process_id, "Failed")
+        raise ChildProcessError("Error within Player ETL process!") from exc
+
+    finally:
+        conn.commit()
 
 
 def etl_battle_log(conn: Connection, config_parameters: dict):
@@ -195,6 +210,9 @@ if __name__ =="__main__":
 
     config = environ
 
+    print(f"ETL started at {dt.now()}")
+
+    ## Establish DB Connection and get last process run times
     try:
         db_conn = get_db_connection(config)
 
@@ -203,29 +221,29 @@ if __name__ =="__main__":
 
         latest_brawler_etl = get_last_process_id_run(db_conn, brawl_process_id)
         latest_player_etl = get_last_process_id_run(db_conn, player_process_id)
-        etl_player(db_conn, config)
 
-    except DatabaseError as e:
-        raise DatabaseError(f"Database connection failed: {e}") from e
+    except DatabaseError as exc:
+        raise DatabaseError(f"Database connection failed: {exc}") from exc
 
-    # if run_etl(latest_brawler_etl, 60):
-    #     try:
-    #         etl_brawler(db_conn, config)
-    #     except Exception as e:
-    #         raise ChildProcessError(f"ETL failed at {dt.now()}. {e}") from e
-    # else:
-    #     print(f"ETL skipped at {dt.now()}. Last run was at {latest_brawler_etl}")
+    ## Run ETLs based on last run times
+    ## Bralwer ETL - every 60 minutes
+    if run_etl(latest_brawler_etl, 60):
+        try:
+            etl_brawler(db_conn, config)
+        except Exception as exc:
+            raise ChildProcessError(f"ETL failed at {dt.now()}. {exc}") from exc
+    else:
+        print(f"Brawler ETL skipped at {dt.now()}. Last run was at {latest_brawler_etl}")
 
-    # if run_etl(latest_player_etl, 60):
-    #     try:
-              # etl_player(db_conn, config)
-        # except Exception as e:
-            # raise ChildProcessError(f"ETL failed at {dt.now()}. {e}") from e
+    ## Player ETL - every 60 minutes
+    if run_etl(latest_player_etl, 60):
+        try:
+            etl_player(db_conn, config)
+        except Exception as exc:
+            raise ChildProcessError(f"ETL failed at {dt.now()}. {exc}") from exc
+    else:
+        print(f"Player ETL skipped at {dt.now()}. Last run was at {latest_player_etl}")
 
-    # finally:
-    #     print(f"ETL finished at {dt.now()}")
-
-    # etl_battle_log()
-    finally:
-        db_conn.commit()
-        db_conn.close()
+    ## Close DB Connection
+    db_conn.close()
+    print(f"ETL finished at {dt.now()}")
