@@ -75,6 +75,18 @@ CREATE TABLE player_tropies (
   FOREIGN KEY (player_id) references player (player_id)
 );
 
+DROP TABLE IF EXISTS player_victories;
+CREATE TABLE player_victories (
+  player_victories_id INTEGER NOT NULL,
+  player_id INTEGER NOT NULL,
+  _3v3_victories INTEGER,
+  solo_victories INTEGER,
+  duo_victories INTEGER,
+  created_at TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (player_victories_id),
+  FOREIGN KEY (player_id) references player (player_id)
+);
+
 DROP TABLE IF EXISTS bs_event;
 CREATE TABLE bs_event (
   bs_event_id INTEGER NOT NULL,
