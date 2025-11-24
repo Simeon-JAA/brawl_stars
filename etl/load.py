@@ -138,20 +138,6 @@ def insert_player_exp(db_conn: Connection, player_id: int, player_data: dict) ->
         cur.close()
 
 
-def insert_player_name_db(db_conn: Connection, player_data: dict):
-    """Insert data into player_name table"""
-
-    try:
-        cur = db_conn.cursor(factory=Cursor)
-        cur.execute("""INSERT INTO player_name
-                    (player_tag, player_name, player_name_version)
-                    VALUES
-                    (%s)""", player_data["tag"])
-
-    except Exception as exc:
-        raise DatabaseError("Error: Unable to insert player data!") from exc
-
-
 def insert_battle_log_db(db_conn: Connection, battle_log_data: dict):
     """Insert battle log data into database"""
 
