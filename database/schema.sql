@@ -64,8 +64,8 @@ PRIMARY KEY (player_exp_id),
 FOREIGN KEY (player_id) references player (player_id)
 );
 
-DROP TABLE IF EXISTS player_tropies;
-CREATE TABLE player_tropies (
+DROP TABLE IF EXISTS player_trophies;
+CREATE TABLE player_trophies (
   player_trophies_id INTEGER NOT NULL,
   player_id INTEGER NOT NULL,
   trophies INTEGER NOT NULL,
