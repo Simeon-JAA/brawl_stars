@@ -409,7 +409,7 @@ def transform_battle_log_api(db_connection: connection,
 
         battle_df = battle_to_df(db_connection, battle, player_tag)
         battle_log_df = pd.concat([battle_log_df, battle_df], ignore_index=True)
-    
+
     #Insert missing battle types
     battle_types = battle_log_df["battle_type"].unique()
     for battle_type in battle_types:

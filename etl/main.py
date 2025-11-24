@@ -94,7 +94,7 @@ def run_etl(last_run: dt, threshold_mins: int) -> bool:
     return True if time_diff >= threshold_mins else False
 
 
-def etl_brawler(conn: Connection, config: dict):
+def etl_brawler(conn: Connection, config_parameters: dict):
     """ETL for brawler data"""
 
     #Update Process Log - Start
@@ -107,8 +107,8 @@ def etl_brawler(conn: Connection, config: dict):
     brawler_starpower_data_database_df = get_starpowers_latest_version(conn)
     brawler_gadget_data_database_df = get_gadgets_latest_version(conn)
     event_data_database_df = get_events_latest_version(conn)
-    brawler_data_api = extract_brawler_data_api(config)
-    event_data_api = extract_event_data_api(config)
+    brawler_data_api = extract_brawler_data_api(config_parameters)
+    event_data_api = extract_event_data_api(config_parameters)
 
     # Transform
     brawler_data_api = transform_brawl_data_api(brawler_data_api)
@@ -145,7 +145,7 @@ def etl_brawler(conn: Connection, config: dict):
     conn.commit()
 
 
-def etl_player(conn: Connection, config: dict):
+def etl_player(conn: Connection, config_parameters: dict):
     """ETL for player data"""
 
 
@@ -155,8 +155,8 @@ def etl_player(conn: Connection, config: dict):
     conn.commit()
 
     #Get parameters from .env
-    bs_player_tag = config["player_tag"]
-    api_token = config["api_token"]
+    bs_player_tag = config_parameters["player_tag"]
+    api_token = config_parameters["api_token"]
 
     #Extract
     player_data_api = get_api_player_data(api_token, bs_player_tag)
@@ -164,7 +164,7 @@ def etl_player(conn: Connection, config: dict):
 
     #Transform
     player_data_api = transform_player_data_api(player_data_api)
-    
+
     #Load
     if player_id == 0:
         insert_new_player_db(conn, player_data_api)
@@ -178,12 +178,12 @@ def etl_player(conn: Connection, config: dict):
     conn.commit()
 
 
-def etl_battle_log(conn: Connection, config: dict):
+def etl_battle_log(conn: Connection, config_parameters: dict):
     """ETL for player battle log"""
 
-    bs_player_tag = config["player_tag"]
+    bs_player_tag = config_parameters["player_tag"]
 
-    player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
+    player_battle_log_api = extract_player_battle_log_api(config_parameters, bs_player_tag)
     player_battle_log_api = transform_battle_log_api(player_battle_log_api, bs_player_tag)
     for battle in player_battle_log_api:
         print(battle)
@@ -228,4 +228,4 @@ if __name__ =="__main__":
     # etl_battle_log()
     finally:
         db_conn.commit()
-        db_conn.close() 
+        db_conn.close()

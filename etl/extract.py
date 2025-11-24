@@ -211,13 +211,13 @@ def get_most_recent_battle_log_time(db_connection: Connection, player_tag: str):
                         FROM battle
                         WHERE player_tag = %s
                         LIMIT 1;""", [player_tag])
-            
+
         except Exception as exc:
             raise DatabaseError("Error: Unable to retrieve data from database!") from exc
         else:
             most_recent_battle_log_time = cur.fetchone()
             return most_recent_battle_log_time["most_recent_battle_time"]
-            
+
 
 def get_distinct_battle_types(db_connection: Connection) -> list[str]:
     """Returns distinct battle types from the database"""
@@ -253,7 +253,7 @@ def get_distinct_event_ids(db_connection: Connection) -> list[int]:
 
 def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
-    
+
     return
 
 
