@@ -156,6 +156,25 @@ def insert_player_trophies(db_conn: Connection, player_id: int, player_data: dic
         cur.close()
 
 
+def insert_player_victories(db_conn: Connection, player_id: int, player_data: dict) -> None:
+    """Insert data into player_victories table"""
+
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+        cur.execute("""INSERT INTO player_victories
+                    (player_id, _3vs3_victories, solo_victories, duo_victories)
+                    VALUES
+                    (?, ?, ?, ?)""", 
+                    [player_id, player_data["3vs3_victories"],
+                     player_data["solo_victories"], player_data["duo_victories"]])
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to insert player_victories data!") from exc
+
+    finally:
+        cur.close()
+
+
 def insert_battle_log_db(db_conn: Connection, battle_log_data: dict):
     """Insert battle log data into database"""
 

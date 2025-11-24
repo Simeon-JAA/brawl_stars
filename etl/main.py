@@ -18,7 +18,8 @@ from transform import (transform_brawl_data_api, generate_starpower_changes,
                        transform_player_data_api, transform_battle_log_api,
                        transform_event_data_api, generate_event_changes)
 from load import (insert_brawler_db, insert_new_starpower_data, insert_new_gadget_data,
-                  insert_new_event_data, insert_new_player_db, insert_player_exp, insert_player_trophies)
+                  insert_new_event_data, insert_new_player_db, insert_player_exp,
+                  insert_player_trophies, insert_player_victories)
 
 
 def get_process_id(conn: Connection, process_name: str) -> int:
@@ -81,6 +82,18 @@ def get_last_process_id_run(conn: Connection, process_id: int) -> dt:
         raise DatabaseError (f"Database error occurred: {e}") from e
 
 
+def run_etl(last_run: dt, threshold_mins: int) -> bool:
+    """Return true if last run time is greater than or
+    equal to threshold. Or if last run is None"""
+
+    if last_run is None:
+        return True
+
+    time_diff = int((dt.now() - last_run).total_seconds()/60)
+
+    return True if time_diff >= threshold_mins else False
+
+
 def etl_brawler(conn: Connection, config: dict):
     """ETL for brawler data"""
 
@@ -132,19 +145,14 @@ def etl_brawler(conn: Connection, config: dict):
     conn.commit()
 
 
-def run_etl(last_run: dt, threshold_mins: int) -> bool:
-    """Run ETL if last run was more than threshold"""
-
-    if last_run is None:
-        return True
-
-    time_diff = int((dt.now() - last_run).total_seconds()/60)
-
-    return True if time_diff >= threshold_mins else False
-
-
 def etl_player(conn: Connection, config: dict):
     """ETL for player data"""
+
+
+    #Update Process Log - Start
+    process_id = get_process_id(conn, "Player ETL")
+    update_process_log(conn, process_id, "Start")
+    conn.commit()
 
     #Get parameters from .env
     bs_player_tag = config["player_tag"]
@@ -163,6 +171,11 @@ def etl_player(conn: Connection, config: dict):
 
     insert_player_exp(conn, player_id, player_data_api)
     insert_player_trophies(conn, player_id, player_data_api)
+    insert_player_victories(conn, player_id, player_data_api)
+
+    #Update Process Log - End
+    update_process_log(conn, process_id, "End")
+    conn.commit()
 
 
 def etl_battle_log(conn: Connection, config: dict):
