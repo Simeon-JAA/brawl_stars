@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from extract import (extract_brawler_data_api, get_brawlers_latest_version,
                      get_gadgets_latest_version, get_starpowers_latest_version,
                      get_events_latest_version, extract_player_battle_log_api,
-                     get_db_connection, extract_event_data_api)
+                     get_db_connection, extract_event_data_api, get_api_player_data,
+                     get_player_id)
 from transform import (transform_brawl_data_api, generate_starpower_changes,
                        brawl_api_data_to_df, add_starpower_changes_version,
                        generate_gadget_changes, add_gadget_changes_version,
@@ -17,7 +18,7 @@ from transform import (transform_brawl_data_api, generate_starpower_changes,
                        transform_player_data_api, transform_battle_log_api,
                        transform_event_data_api, generate_event_changes)
 from load import (insert_brawler_db, insert_new_starpower_data, insert_new_gadget_data,
-                  insert_new_event_data)
+                  insert_new_event_data, insert_new_player_db, insert_player_exp, insert_player_trophies)
 
 
 def get_process_id(conn: Connection, process_name: str) -> int:
@@ -145,10 +146,23 @@ def run_etl(last_run: dt, threshold_mins: int) -> bool:
 def etl_player(conn: Connection, config: dict):
     """ETL for player data"""
 
+    #Get parameters from .env
     bs_player_tag = config["player_tag"]
+    api_token = config["api_token"]
 
-    # player_battle_log_api = extract_player_battle_log_api(config, bs_player_tag)
-    # player_data_api = transform_player_data_api(player_data_api)
+    #Extract
+    player_data_api = get_api_player_data(api_token, bs_player_tag)
+    player_id = get_player_id(conn, player_data_api)
+
+    #Transform
+    player_data_api = transform_player_data_api(player_data_api)
+    
+    #Load
+    if player_id == 0:
+        insert_new_player_db(conn, player_data_api)
+
+    insert_player_exp(conn, player_id, player_data_api)
+    insert_player_trophies(conn, player_id, player_data_api)
 
 
 def etl_battle_log(conn: Connection, config: dict):
@@ -170,20 +184,35 @@ if __name__ =="__main__":
 
     try:
         db_conn = get_db_connection(config)
+
         brawl_process_id = get_process_id(db_conn, "Brawler ETL")
+        player_process_id = get_process_id(db_conn, "Player ETL")
+
         latest_brawler_etl = get_last_process_id_run(db_conn, brawl_process_id)
+        latest_player_etl = get_last_process_id_run(db_conn, player_process_id)
+        etl_player(db_conn, config)
 
     except DatabaseError as e:
         raise DatabaseError(f"Database connection failed: {e}") from e
 
-    if run_etl(latest_brawler_etl, 60):
-        try:
-            etl_brawler(db_conn, config)
-        except Exception as e:
-            raise ChildProcessError(f"ETL failed at {dt.now()}. {e}") from e
-    else:
-        print(f"ETL skipped at {dt.now()}. Last run was at {latest_brawler_etl}")
+    # if run_etl(latest_brawler_etl, 60):
+    #     try:
+    #         etl_brawler(db_conn, config)
+    #     except Exception as e:
+    #         raise ChildProcessError(f"ETL failed at {dt.now()}. {e}") from e
+    # else:
+    #     print(f"ETL skipped at {dt.now()}. Last run was at {latest_brawler_etl}")
+
+    # if run_etl(latest_player_etl, 60):
+    #     try:
+              # etl_player(db_conn, config)
+        # except Exception as e:
+            # raise ChildProcessError(f"ETL failed at {dt.now()}. {e}") from e
+
     # finally:
     #     print(f"ETL finished at {dt.now()}")
 
     # etl_battle_log()
+    finally:
+        db_conn.commit()
+        db_conn.close() 
