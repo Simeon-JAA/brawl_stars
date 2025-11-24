@@ -120,6 +120,24 @@ def insert_new_player_db(db_conn: Connection, player_data: dict) -> None:
         cur.close()
 
 
+def insert_player_exp(db_conn: Connection, player_id: int, player_data: dict) -> None:
+    """Insert data into player_exp table"""
+
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+        cur.execute("""INSERT INTO player_exp
+                    (player_id, exp_level, exp_points)
+                    VALUES
+                    (?, ?, ?)""", 
+                    [player_id, player_data["exp_level"], player_data["exp_points"]])
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to insert player data!") from exc
+
+    finally:
+        cur.close()
+
+
 def insert_player_name_db(db_conn: Connection, player_data: dict):
     """Insert data into player_name table"""
 
