@@ -200,6 +200,7 @@ def get_brawler_latest_version_id(db_connection: Connection, brawler_id: int) ->
     return brawler_latest_version
 
 
+#TODO fix this
 def get_most_recent_battle_log_time(db_connection: Connection, player_tag: str):
     """Returns most recent battle log time for a 
     given player tag from the database"""
@@ -254,6 +255,7 @@ def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
     
     return
+
 
 def get_starpower_latest_version_id(db_connection: Connection, starpower_id: int) -> int:
     """Get latest version ID of specified starpower"""
@@ -328,10 +330,11 @@ def get_all_brawler_data(api_header_data: dict) -> list[dict]:
     return brawler_data_all
 
 
-def get_api_player_data(api_header_data: str, player_tag: str) -> dict:
+def get_api_player_data(api_token: str, player_tag: str) -> dict:
     """Fetches player data from api"""
 
     player_tag = format_player_tag(player_tag)
+    api_header_data = get_api_header(api_token)
 
     if not check_player_tag(player_tag):
         raise ValueError("Error: Player tag is invlaid!")
@@ -347,10 +350,11 @@ def get_api_player_data(api_header_data: str, player_tag: str) -> dict:
     return response_data
 
 
-def get_api_player_battle_log(api_header_data: str, player_tag: str) -> dict:
+def get_api_player_battle_log(api_token: str, player_tag: str) -> dict:
     """Fetches player battle log data from api"""
 
     player_tag = format_player_tag(player_tag)
+    api_header_data = get_api_header(api_token)
 
     if not check_player_tag(player_tag):
         raise ValueError("Error: Player tag is invlaid!")
