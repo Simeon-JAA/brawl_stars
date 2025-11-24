@@ -65,6 +65,8 @@ def mock_player_data_db():
     }
 
     return player_data_db
+
+
 @pytest.fixture
 def mock_single_bs_battle():
     """Returns a mock battle log entry"""

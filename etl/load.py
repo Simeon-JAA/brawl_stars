@@ -41,7 +41,7 @@ def insert_brawler_db(db_conn: Connection, brawler_data: DataFrame):
         except Exception as exc:
             raise DatabaseError("Error: Unable to insert brawler data!") from exc
 
-    
+
 def insert_new_battle_type_data(db_conn: Connection, battle_type: str):
     """Inserts new battle type data into the database"""
 
@@ -103,40 +103,85 @@ def insert_new_gadget_data(db_conn: Connection, gadget_data: DataFrame):
             raise DatabaseError("Error: Unable to insert gadget data!") from exc
 
 
-def insert_player_db(db_conn: Connection, player_data: dict):
+def insert_new_player_db(db_conn: Connection, player_data: dict) -> None:
     """Insert player data into database"""
 
     try:
         cur =  db_conn.cursor(factory=Cursor)
         cur.execute("""INSERT INTO player
-                    (player_tag)
+                    (player_tag, player_name)
                     VALUES
-                    (%s)""", player_data["tag"])
+                    (?, ?)""", [player_data["tag"], player_data["name"]])
 
     except Exception as exc:
         raise DatabaseError("Error: Unable to insert player data!") from exc
 
+    finally:
+        cur.close()
 
-def insert_player_name_db(db_conn: Connection, player_data: dict):
-    """Insert data into player_name table"""
+
+def insert_player_exp(db_conn: Connection, player_id: int, player_data: dict) -> None:
+    """Insert data into player_exp table"""
 
     try:
         cur = db_conn.cursor(factory=Cursor)
-        cur.execute("""INSERT INTO player_name
-                    (player_tag, player_name, player_name_version)
+        cur.execute("""INSERT INTO player_exp
+                    (player_id, exp_level, exp_points)
                     VALUES
-                    (%s)""", player_data["tag"])
+                    (?, ?, ?)""",
+                    [player_id, player_data["exp_level"], player_data["exp_points"]])
 
     except Exception as exc:
         raise DatabaseError("Error: Unable to insert player data!") from exc
+
+    finally:
+        cur.close()
+
+
+def insert_player_trophies(db_conn: Connection, player_id: int, player_data: dict) -> None:
+    """Insert data into player_trophies table"""
+
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+        cur.execute("""INSERT INTO player_trophies
+                    (player_id, trophies, highest_trophies)
+                    VALUES
+                    (?, ?, ?)""",
+                    [player_id, player_data["trophies"], player_data["highest_trophies"]])
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to insert player trophies data!") from exc
+
+    finally:
+        cur.close()
+
+
+def insert_player_victories(db_conn: Connection, player_id: int, player_data: dict) -> None:
+    """Insert data into player_victories table"""
+
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+        cur.execute("""INSERT INTO player_victories
+                    (player_id, _3vs3_victories, solo_victories, duo_victories)
+                    VALUES
+                    (?, ?, ?, ?)""",
+                    [player_id, player_data["3vs3_victories"],
+                     player_data["solo_victories"], player_data["duo_victories"]])
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to insert player_victories data!") from exc
+
+    finally:
+        cur.close()
 
 
 def insert_battle_log_db(db_conn: Connection, battle_log_data: dict):
     """Insert battle log data into database"""
 
-    for battle in battle_log_data:
-        try:
-            cur = db_conn.cursor(factory=Cursor)
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+
+        for battle in battle_log_data:
             cur.execute("""INSERT INTO battle
                         (player_tag, battle_time, event_id, result,
                         duration, trophy_change, brawler_played_id, star_player)
@@ -146,8 +191,11 @@ def insert_battle_log_db(db_conn: Connection, battle_log_data: dict):
                           battle["result"], battle["duration"], battle["trophy_change"],
                           battle["brawler_id"], battle["star_player"]])
 
-        except Exception as exc:
-            raise DatabaseError("Error: Unable to insert battle log data!") from exc
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to insert battle log data!") from exc
+
+    finally:
+        cur.close()
 
 
 def insert_new_event_data(db_conn: Connection, event_log_data: DataFrame):
@@ -158,9 +206,10 @@ def insert_new_event_data(db_conn: Connection, event_log_data: DataFrame):
     if event_log_data.empty:
         return
 
-    for index, event in event_log_data.iterrows():
-        try:
-            cur = db_conn.cursor(factory=Cursor)
+    try:
+        cur = db_conn.cursor(factory=Cursor)
+
+        for index, event in event_log_data.iterrows():
             cur.execute("""INSERT INTO bs_event
                         (bs_event_id, bs_event_version, mode, map)
                         VALUES
@@ -168,8 +217,8 @@ def insert_new_event_data(db_conn: Connection, event_log_data: DataFrame):
                         [event["event_id"], event["event_version"],
                           event["mode"], event["map"]])
 
-        except Exception as exc:
-            raise DatabaseError("Error inserting event data into database!") from exc
+    except Exception as exc:
+        raise DatabaseError("Error inserting event data into database!") from exc
 
 
 if __name__ =="__main__":

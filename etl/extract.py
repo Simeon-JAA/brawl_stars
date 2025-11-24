@@ -200,6 +200,7 @@ def get_brawler_latest_version_id(db_connection: Connection, brawler_id: int) ->
     return brawler_latest_version
 
 
+#TODO fix this
 def get_most_recent_battle_log_time(db_connection: Connection, player_tag: str):
     """Returns most recent battle log time for a 
     given player tag from the database"""
@@ -210,13 +211,13 @@ def get_most_recent_battle_log_time(db_connection: Connection, player_tag: str):
                         FROM battle
                         WHERE player_tag = %s
                         LIMIT 1;""", [player_tag])
-            
+
         except Exception as exc:
             raise DatabaseError("Error: Unable to retrieve data from database!") from exc
         else:
             most_recent_battle_log_time = cur.fetchone()
             return most_recent_battle_log_time["most_recent_battle_time"]
-            
+
 
 def get_distinct_battle_types(db_connection: Connection) -> list[str]:
     """Returns distinct battle types from the database"""
@@ -252,8 +253,9 @@ def get_distinct_event_ids(db_connection: Connection) -> list[int]:
 
 def extract_brawler_data_database(config_env) -> list[dict]:
     """Extracts brawler data from database"""
-    
+
     return
+
 
 def get_starpower_latest_version_id(db_connection: Connection, starpower_id: int) -> int:
     """Get latest version ID of specified starpower"""
@@ -301,6 +303,32 @@ def get_gadget_latest_version_id(db_connection: Connection, gadget_id: int) -> i
     return gadget_latest_version_id
 
 
+def get_player_id(db_connection: Connection, player_data: dict) -> int:
+    """Get player ID from database given the player data received from the API"""
+
+    try:
+        cur = db_connection.cursor(factory=Cursor)
+        cur.execute("""
+            SELECT player_id
+            FROM player
+            WHERE player_tag = ?
+            ORDER BY created_at DESC
+            LIMIT 1;""", [player_data["tag"]])
+
+        player_id = cur.fetchone()
+
+    except Exception as exc:
+        raise DatabaseError("Error: Unable to retrieve data from database!") from exc
+
+    finally:
+        cur.close()
+
+    if not player_id:
+        return 0
+
+    return player_id[0]
+
+
 ## API Extraction
 def get_api_header(api_token: str) -> dict:
     """Returns api header data"""
@@ -328,10 +356,11 @@ def get_all_brawler_data(api_header_data: dict) -> list[dict]:
     return brawler_data_all
 
 
-def get_api_player_data(api_header_data: str, player_tag: str) -> dict:
+def get_api_player_data(api_token: str, player_tag: str) -> dict:
     """Fetches player data from api"""
 
     player_tag = format_player_tag(player_tag)
+    api_header_data = get_api_header(api_token)
 
     if not check_player_tag(player_tag):
         raise ValueError("Error: Player tag is invlaid!")
@@ -347,10 +376,11 @@ def get_api_player_data(api_header_data: str, player_tag: str) -> dict:
     return response_data
 
 
-def get_api_player_battle_log(api_header_data: str, player_tag: str) -> dict:
+def get_api_player_battle_log(api_token: str, player_tag: str) -> dict:
     """Fetches player battle log data from api"""
 
     player_tag = format_player_tag(player_tag)
+    api_header_data = get_api_header(api_token)
 
     if not check_player_tag(player_tag):
         raise ValueError("Error: Player tag is invlaid!")
