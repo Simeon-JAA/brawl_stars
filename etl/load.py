@@ -103,18 +103,21 @@ def insert_new_gadget_data(db_conn: Connection, gadget_data: DataFrame):
             raise DatabaseError("Error: Unable to insert gadget data!") from exc
 
 
-def insert_player_db(db_conn: Connection, player_data: dict):
+def insert_new_player_db(db_conn: Connection, player_data: dict) -> None:
     """Insert player data into database"""
 
     try:
         cur =  db_conn.cursor(factory=Cursor)
         cur.execute("""INSERT INTO player
-                    (player_tag)
+                    (player_tag, player_name)
                     VALUES
-                    (%s)""", player_data["tag"])
+                    (?, ?)""", [player_data["tag"], player_data["name"]])
 
     except Exception as exc:
         raise DatabaseError("Error: Unable to insert player data!") from exc
+  
+    finally:
+        cur.close()
 
 
 def insert_player_name_db(db_conn: Connection, player_data: dict):
