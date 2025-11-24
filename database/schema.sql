@@ -79,7 +79,7 @@ DROP TABLE IF EXISTS player_victories;
 CREATE TABLE player_victories (
   player_victories_id INTEGER NOT NULL,
   player_id INTEGER NOT NULL,
-  _3v3_victories INTEGER,
+  _3vs3_victories INTEGER,
   solo_victories INTEGER,
   duo_victories INTEGER,
   created_at TEXT DEFAULT (datetime('now')),
