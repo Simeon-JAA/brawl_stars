@@ -70,6 +70,7 @@ def get_last_process_id_run(conn: Connection, process_id: int) -> dt:
             """SELECT last_updated
             FROM process_log
             WHERE process_id = ?
+            AND process_status = 'Start'
             ORDER BY last_updated DESC
             LIMIT 1;""", [process_id])
 
@@ -89,7 +90,7 @@ def run_etl(last_run: dt, threshold_mins: int) -> bool:
     if last_run is None:
         return True
 
-    time_diff = int((dt.now() - last_run).total_seconds()/60)
+    time_diff = round((dt.now() - last_run).total_seconds()/60)
 
     return True if time_diff >= threshold_mins else False
 
