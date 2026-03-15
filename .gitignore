@@ -179,3 +179,6 @@ crontab_log*.txt
 
 #Database files
 database/*.db
+
+#Visual Studio files
+.vs
