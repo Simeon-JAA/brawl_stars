@@ -7,6 +7,18 @@ CREATE TABLE brawler (
   PRIMARY KEY (brawler_id, brawler_version)
 );
 
+DROP TABLE IF EXISTS hypercharge;
+CREATE TABLE hypercharge (
+  hypercharge_id INTEGER NOT NULL,
+  hypercharge_version INTEGER NOT NULL,
+  hypercharge_name TEXT NOT NULL,
+  brawler_id INTEGER NOT NULL,
+  brawler_version INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (hypercharge_id, hypercharge_version),
+  FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
+);
+
 DROP TABLE IF EXISTS starpower;
 CREATE TABLE starpower (
   starpower_id INTEGER NOT NULL,
