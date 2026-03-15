@@ -48,6 +48,7 @@ CREATE TABLE gear (
   gear_id INTEGER NOT NULL,
   gear_version INTEGER NOT NULL,
   gear_name TEXT NOT NULL,
+  gear_level TEXT NOT NULL,
   brawler_id INTEGER NOT NULL,
   brawler_version INTEGER NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
