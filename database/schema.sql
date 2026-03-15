@@ -107,14 +107,16 @@ CREATE TABLE process (
 
 INSERT INTO process (process_id, process_name) VALUES
 (1, 'Brawler ETL'),
-(2, 'Player ETL');
+(2, 'Player ETL'),
+(3, 'Battle ETL');
 
 DROP TABLE IF EXISTS process_log;
 CREATE TABLE process_log (
   process_log_id INTEGER NOT NULL,
-  process_id TEXT NOT NULL,
+  process_id INTEGER NOT NULL,
   process_status TEXT NOT NULL,
   last_updated TEXT DEFAULT (datetime('now')),
+  process_message TEXT,
   PRIMARY KEY (process_log_id),
   FOREIGN KEY (process_id) REFERENCES process (process_id)
 );
@@ -129,18 +131,20 @@ CREATE TABLE process_log (
 
 -- DROP TABLE IF EXISTS battle;
 -- CREATE TABLE battle (
---   battle_id INT TEXT NOT NULL,
---   player_tag VARCHAR(50) NOT NULL,
---   battle_time TIMESTAMPTZ,
+--   battle_id INTEGER NOT NULL,
+--   player_id INTEGER NOT NULL,
+--   battle_time TEXT NOT NULL,
 --   bs_event_id INT NOT NULL,
+--   bs_event_version INT NOT NULL,
 --   battle_type_id SMALLINT NOT NULL,
 --   result TEXT NOT NULL,
 --   duration INTEGER NOT NULL,
 --   trophy_change INTEGER, 
 --   brawler_id INTEGER NOT NULL,
+--   brawler_version INTEGER NOT NULL,
 --   star_player boolean,
 --   PRIMARY KEY (id),
---   FOREIGN KEY (bs_event_id) REFERENCES bs_event (bs_event_id),
---   FOREIGN KEY (player_id) references player (player_id)
+--   FOREIGN KEY (player_id) references player (player_id),
+--   FOREIGN KEY (bs_event_id, bs_event_version) REFERENCES bs_event (bs_event_id, bs_event_version),
+--   FOREIGN KEY (brawler_id, brawler_version) REFERENCES brawler (brawler_id, brawler_version)
 -- );
-
