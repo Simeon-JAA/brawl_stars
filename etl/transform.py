@@ -19,9 +19,9 @@ def brawler_name_value_to_title(brawler_data: dict) -> dict:
 
     brawler_data_keys = ("name", "id", "starPowers", "gadgets")
 
-    for key in brawler_data.keys():
-        if key not in brawler_data_keys:
-            raise KeyError("Error: Missing key from brawler data!")
+    for key in brawler_data_keys:
+        if key not in brawler_data.keys():
+            raise KeyError(f"Error: {key.upper()} is missing from brawler data!")
 
     brawler_data["name"] = brawler_data["name"].title()
 
