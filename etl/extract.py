@@ -214,9 +214,9 @@ def get_most_recent_battle_log_time(db_connection: Connection, player_tag: str):
 
         except Exception as exc:
             raise DatabaseError("Error: Unable to retrieve data from database!") from exc
-        else:
-            most_recent_battle_log_time = cur.fetchone()
-            return most_recent_battle_log_time["most_recent_battle_time"]
+
+        most_recent_battle_log_time = cur.fetchone()
+        return most_recent_battle_log_time["most_recent_battle_time"]
 
 
 def get_distinct_battle_types(db_connection: Connection) -> list[str]:
@@ -230,9 +230,8 @@ def get_distinct_battle_types(db_connection: Connection) -> list[str]:
         except Exception as exc:
             raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
-        else:
-            battle_types = cur.fetchall()
-            return battle_types
+        battle_types = cur.fetchall()
+        return battle_types
 
 
 def get_distinct_event_ids(db_connection: Connection) -> list[int]:
@@ -246,15 +245,8 @@ def get_distinct_event_ids(db_connection: Connection) -> list[int]:
         except Exception as exc:
             raise DatabaseError("Error: Unable to retrieve data from database!") from exc
 
-        else:
-            bs_event_ids = cur.fetchall()
-            return bs_event_ids
-
-
-def extract_brawler_data_database(config_env) -> list[dict]:
-    """Extracts brawler data from database"""
-
-    return
+        bs_event_ids = cur.fetchall()
+        return bs_event_ids
 
 
 def get_starpower_latest_version_id(db_connection: Connection, starpower_id: int) -> int:
@@ -468,13 +460,13 @@ if __name__ =="__main__":
     gadgets_db_df = get_gadgets_latest_version(conn)
     events_db_df = get_events_latest_version(conn)
 
+    conn.close()
+
     # Extract - Brawler data api
     api_header = get_api_header(config["api_token"])
     bs_player_tag  = config["player_tag"]
 
     brawler_data_api = extract_brawler_data_api(config)
 
-    player_data = get_api_player_data(api_header, bs_player_tag)
+    player_data_api = get_api_player_data(api_header, bs_player_tag)
     player_battle_log = get_api_player_battle_log(api_header, bs_player_tag)
-
-    conn.close()
